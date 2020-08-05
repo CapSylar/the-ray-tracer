@@ -1,0 +1,52 @@
+#include "defs.h"
+#include "factories.h"
+
+tuple x = ( tuple ) { 3 , 1 , 1 , 1 } ;
+tuple y = ( tuple ) { 3 , 2 , 0 , 0 } ;
+tuple z = ( tuple ) { 5 , 3 , 6 , 1 } ;
+tuple c = ( tuple ) { 7 , 3 , 2 , 0 } ;
+tuple cc = ( tuple ) { 2 , 2 , 2 , 2 };
+tuple a = ( tuple ) { 1 , 2 , 3 } ;
+tuple b = ( tuple ) { 2 , 3 , 4 } ;
+
+#test test_tuple_creation
+    tuple test = get_point(3,1,1) ;
+    fail_unless( compare_tuple( &test, &x ) , "failure in point creation") ;
+    test = get_vector(3,2,0) ;
+    fail_unless( compare_tuple( &test, &y ) , "failure in vector creation") ;
+
+#test tuple_operation
+    tuple res = ( tuple ) { 12 , 6 , 8 , 1 } ;
+    tuple got = add_tuples( &z , &c ) ;
+    fail_unless ( compare_tuple( &got , &res ) , "failure in tuple addition" ) ;
+    tuple res2 = ( tuple ) { 0 , -1 , 1 , 1 } ; // x - y
+    got = sub_tuples ( &x , &y) ;
+    fail_unless ( compare_tuple( &res2 , &got ) , "failure in tuple subtraction" ) ;
+    res = ( tuple ) { -3 , -1, -1 , -1} ;
+    neg_tuple (&res) ;
+    fail_unless ( compare_tuple( &x , &res ) , "failure in tuple negation ") ;
+    res = ( tuple ) { 14 , 6 , 4 , 0 } ;
+    got = c ;
+    mult_scalar_tuple ( &got , 2 ) ;
+    fail_unless ( compare_tuple (&res , &got) , "failure in tuple by scalar multiplication ") ;
+    float hello = 3.464101615 ;
+    float xx = mag_tuple ( &x ) ;
+    fail_unless ( float_cmp ( xx , hello ) , "failure in calculating magnitude of tuple") ;
+    res = ( tuple ) { 0.5 , 0.5 , 0.5 , 0.5 } ;
+    got = cc ;
+    normalize_tuple (&got) ;
+    fail_unless ( compare_tuple (&res , &got) , "failure in normalizing the tuples") ;
+    res = ( tuple ) { -1 , 2 , -1 , 0 } ;
+    got = cross_tuples ( &a , &b );
+    fail_unless ( compare_tuple (&res, &got) , "failure in cross product of tuples" );
+    res = ( tuple ) { 1 , -2 , 1 , 0 };
+    got = cross_tuples ( &b , &a ) ;
+    fail_unless ( compare_tuple ( &res , &got) , "failure in cross product of tuples" ) ;
+
+#test color_operations
+    // only test the hadamard product, all other function work
+    tuple color1 = get_color ( 0.5 , 1 , 0 ) ;
+    tuple color2 = get_color ( 1 , 0.25 , 0 ) ;
+    tuple got = hadamard_prod( &color1 , &color2 ) ;
+    tuple res = ( tuple ) { 0.5 , 0.25 , 0 } ;
+    fail_unless ( compare_tuple ( &res , &got ) < "hadamard product failed") ;
