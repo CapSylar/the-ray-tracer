@@ -16,5 +16,7 @@ float mag_tuple ( tuple* tp1 ) ;
 void normalize_tuple ( tuple *tp1 ) ;
 tuple cross_tuples ( tuple *tp1 , tuple *tp2 ) ;
 tuple hadamard_prod ( tuple *tp1 , tuple *tp2 ) ;
+float dot_tuples ( tuple *tp1 , tuple *tp2 ) ;
+
 
 #endif //RAY_TRACER_FACTORIES_H

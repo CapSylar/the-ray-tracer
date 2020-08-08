@@ -18,4 +18,4 @@ else()
 
 endif()
 
-add_executable( ray_tracer defs.h factories.c factories.h ${ADD_SOURCES} canvas.c canvas.h)
+add_executable( ray_tracer defs.h factories.c factories.h ${ADD_SOURCES} canvas.c canvas.h matrix_routines.c matrix_routines.h trans_routines.c trans_routines.h ray.c ray.h)

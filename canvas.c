@@ -27,6 +27,14 @@ void canvas_write ( tuple color , int x , int y )
     if ( x < 0 || x >= canvas.col || y < 0 || y >= canvas.row ) // out of bounds check
         return;
 
+    // check the upper range of the color
+    if ( color.x > 1 )
+        color.x = 1 ;
+    if ( color.y > 1 )
+        color.y = 1 ;
+    if ( color.z > 1 )
+        color.z = 1 ;
+
     canvas.mem[x + y*canvas.col] = color ;
 }
 
@@ -40,14 +48,10 @@ void canvas_ppm () // converts the canvas to ppm file format
     for ( int i = 0 ; i < canvas.col * canvas.row ; ++i )
     {
         tuple current = canvas.mem[i] ;
-        running += snprintf( running , 12 , "%d %d %d\n", (int)(current.x * 255) , (int)(current.y * 255) , (int)(current.z * 255) ) ;
-
-        if ( current.x || current.y || current.z )
-            printf("hit\n");
+        running += snprintf( running , 13 , "%d %d %d\n", (int)(current.x * 255) , (int)(current.y * 255) , (int)(current.z * 255) ) ;
     }
 
     *running = 0 ;
-
     // now save the file
     FILE* fptr = fopen( "ray.ppm" , "wb");
     fputs( ppm_str , fptr );
