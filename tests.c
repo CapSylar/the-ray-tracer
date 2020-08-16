@@ -11,6 +11,18 @@
 #include "matrix_routines.h"
 #include "trans_routines.h"
 #include "ray.h"
+#include "world_view.h"
+
+struct canvas
+{
+    int row ;
+    int col ;
+
+    tuple* mem;
+
+};
+
+extern struct canvas canvas ;
 
 tuple x = ( tuple ) { 3 , 1 , 1 , 1 } ;
 tuple y = ( tuple ) { 3 , 2 , 0 , 0 } ;
@@ -22,7 +34,7 @@ tuple b = ( tuple ) { 2 , 3 , 4 } ;
 
 START_TEST(test_tuple_creation)
 {
-#line 16
+#line 28
     tuple test = get_point(3,1,1) ;
     fail_unless( compare_tuple( &test, &x ) , "failure in point creation") ;
     test = get_vector(3,2,0) ;
@@ -33,7 +45,7 @@ END_TEST
 
 START_TEST(tuple_operation)
 {
-#line 22
+#line 34
     tuple res = ( tuple ) { 12 , 6 , 8 , 1 } ;
     tuple got = add_tuples( &z , &c ) ;
     fail_unless ( compare_tuple( &got , &res ) , "failure in tuple addition" ) ;
@@ -66,7 +78,7 @@ END_TEST
 
 START_TEST(color_operations)
 {
-#line 50
+#line 62
     // only test the hadamard product, all other function work
     tuple color1 = get_color ( 0.5 , 1 , 0 ) ;
     tuple color2 = get_color ( 1 , 0.25 , 0 ) ;
@@ -80,7 +92,7 @@ END_TEST
 
 START_TEST(matrix_operations)
 {
-#line 59
+#line 71
     mat2 x = { 1 , 1 , 1 , 1 } ;
     mat2 y = { 1 , 1 , 1 , 1 } ;
 
@@ -176,7 +188,7 @@ END_TEST
 
 START_TEST(transformations)
 {
-#line 150
+#line 162
     mat4 x ;
     translate ( 5 , -3 , 2 , x ) ;
     tuple point = get_point( -3 ,4 , 5 ) ;
@@ -297,7 +309,7 @@ END_TEST
 
 START_TEST(ray_operations)
 {
-#line 266
+#line 278
     tuple point = get_point ( 2, 3 , 4 );
     tuple direction = get_vector ( 1 , 0 ,0 ) ;
     ray n = get_ray ( &point , &direction) ;
@@ -320,7 +332,9 @@ START_TEST(ray_operations)
 
     n = get_ray ( &point , &direction );
     object sphere = get_sphere() ;
-    inter_collec ret = intersect ( &n , sphere ) ;
+
+    inter_collec ret ;
+    intersect ( &n , sphere , &ret ) ;
 
     fail_unless ( ret.count == 2 , "failure in finding the correct sphere-line intersection points" ) ;
     fail_unless ( float_cmp ( ret.xs[0].t , 4 ) , "failure in finding the correct sphere-line intersection points" ) ;
@@ -330,7 +344,7 @@ START_TEST(ray_operations)
     direction = get_vector ( 0 , 0 , 1 );
 
     n = get_ray ( &point , &direction );
-    ret = intersect ( &n , sphere ) ;
+    intersect ( &n , sphere , &ret  ) ;
 
     fail_unless ( ret.count == 0 , "failure in finding the correct sphere-line intersection points" ) ;
 
@@ -375,7 +389,7 @@ START_TEST(ray_operations)
     scale ( 2 , 2 , 2 , trans ) ;
 
     set_transform ( &sphere , trans ) ;
-    ret = intersect ( &n , sphere ) ;
+    intersect ( &n , sphere , &ret  ) ;
 
     fail_unless ( ret.count == 2 , "failure in intersecting scaled sphere with ray " ) ;
     fail_unless ( float_cmp ( ret.xs[0].t , 3 )  , "failure in intersecting scaled sphere with ray" ) ;
@@ -496,6 +510,198 @@ START_TEST(ray_operations)
     res = get_color ( 0.1 , 0.1   , 0.1   ) ;
 
     fail_unless ( compare_tuple ( &res , &result ) , "failure in shading the object" ) ;
+
+
+
+}
+END_TEST
+
+START_TEST(scene_world_creation)
+{
+#line 482
+    world hello ;
+    init_world ( &hello ) ;
+
+    fail_unless ( hello.obj_count == 2 , "failed to create a new world" ) ;
+    tuple point = get_point ( -10,10,-10 ) ;
+    tuple color = get_color (0.8,1.0,0.6) ;
+    fail_unless ( compare_tuple ( &hello.light.position , &point ) , "failed to create a new world" ) ;
+    fail_unless ( compare_tuple( &hello.objects[0].mat.color , &color ) , "failed to create a new world" ) ;
+
+    // try to intersect ray with world
+    point = get_point (0,0,-5 ) ;
+    tuple direction = get_vector ( 0,0,1 ) ;
+
+    ray god_ray = get_ray ( &point , &direction );
+    inter_collec ret ;
+    inter_ray_world ( &god_ray , &hello , &ret ) ;
+
+    fail_unless ( ret.count == 4 , "failure to intersect ray and world" ) ;
+    fail_unless ( float_cmp ( 4 , ret.xs[0].t ) , "failure to intersect ray and world" ) ;
+    fail_unless ( float_cmp ( 4.5 , ret.xs[1].t ) , "failure to intersect ray and world" ) ;
+    fail_unless ( float_cmp ( 5.5 , ret.xs[2].t ) , "failure to intersect ray and world" ) ;
+    fail_unless ( float_cmp ( 6 , ret.xs[3].t ) , "failure to intersect ray and world" ) ;
+
+    intersection i ;
+    i.obj = get_sphere() ;
+    i.t = 4 ;
+
+    contact_calc calc ;
+    compute_contact ( &god_ray , &i , &calc ) ;
+
+    point = get_point ( 0,0,-1 ) ;
+
+    fail_unless ( float_cmp(calc.t , 4 ) , "failure to create a contract_calc structure" ) ;
+    fail_unless ( compare_tuple ( &point , &calc.p_contact) , "failure to create a contact_calc structure " ) ;
+
+    direction = get_vector ( 0,0,-1 ) ;
+    fail_unless ( compare_tuple ( &direction , &calc.normal) , "failure to create a contact_calc structure " ) ;
+    fail_unless ( compare_tuple ( &direction , &calc.eye_v) , "failure to create a contact_calc structure " ) ;
+    fail_unless ( calc.inside == 0 , "failure to create a contact" );
+
+    point = get_point (0,0,0);
+    direction = get_vector ( 0,0,1);
+    god_ray = get_ray ( &point , &direction );
+
+    i.obj = get_sphere() ;
+    i.t = 1 ;
+    compute_contact ( &god_ray , &i , &calc ) ;
+
+    direction = get_vector(0,0,-1);
+
+    fail_unless ( calc.inside == 1 , "failure to create a contact");
+    fail_unless ( compare_tuple( &direction , &calc.eye_v ) , "failure to create a contact" ) ;
+    fail_unless ( compare_tuple ( &direction , &calc.normal) , "failure to create a contact" ) ;
+
+    // test the color_at function
+
+    point = get_point (0,0,-5) ;
+    direction = get_vector (0,1,0);
+    god_ray = get_ray ( &point , &direction ) ;
+
+    color = color_at ( &hello, &god_ray ) ;
+    tuple black = get_color ( 0,0,0 ) ;
+
+    fail_unless ( compare_tuple ( &black , &color ) , "error in color_at function" );
+
+    direction = get_vector ( 0,0,1) ;
+    god_ray = get_ray ( &point , &direction ) ;
+    color = color_at ( &hello , &god_ray ) ;
+
+    black = get_color (0.38066 , 0.47583 , 0.2855 ) ;
+
+    fail_unless ( compare_tuple ( &black , &color ) , "error in color_at function" );
+
+    // final test for color_at
+
+    hello.objects[0].mat.ambient = 1;
+    hello.objects[1].mat.ambient = 1;
+
+    point = get_point( 0 , 0, 0.75 );
+    direction = get_vector ( 0,0,-1 );
+    god_ray = get_ray ( &point , &direction ) ;
+
+    color = color_at ( &hello , &god_ray ) ;
+
+    fail_unless ( compare_tuple( &color , &hello.objects[1].mat.color ) , "error in color_at function");
+
+    // test the view transform
+
+    mat4 view ;
+    tuple from = get_point (0,0,0) ;
+    tuple to = get_point (0,0,-1) ;
+    tuple up_v = get_vector (0,1,0) ;
+
+    view_transform ( &to , &from , &up_v  , view );
+
+    mat4 ident ;
+    ident_mat4 ( ident ) ;
+
+    fail_unless ( compare_mat4 ( ident , view ) == 0 , "failed to calculate the view matrix" ) ;
+    to = get_point ( 0,0,1 ) ;
+    view_transform ( &to , &from , &up_v  , view );
+    scale (-1,1,-1 , ident ) ;
+    fail_unless ( compare_mat4 ( ident , view ) == 0 , "failed to calculate the view matrix" ) ;
+
+    from = get_point (0,0,8) ;
+    to = get_point (0,0,0);
+    up_v = get_vector (0,1,0) ;
+
+    view_transform ( &to , &from , &up_v  , view );
+    translate ( 0,0,-8 , ident ) ;
+
+    fail_unless ( compare_mat4 ( ident , view ) == 0 , "failed to calculate the view matrix" ) ;
+
+    // test the camera ds
+
+    camera cs ;
+    init_camera ( 100 , 100 , PI/2 , &cs );
+    ident_mat4 ( ident ) ;
+
+    fail_unless ( compare_mat4 ( cs.transform , ident ) == 0 , "failed to create a camera" ) ;
+    fail_unless ( cs.h_size == 100 , "failed to create a camera" ) ;
+    fail_unless ( cs.v_size == 100 , "failed to create a camera" ) ;
+
+    init_camera ( 200 , 125, PI/2 , &cs ) ;
+    fail_unless ( float_cmp( 0.01 , cs.pixel_size )  , "failed to create a camera ") ;
+
+    init_camera ( 125 , 200 , PI/2 , &cs ) ;
+    fail_unless ( float_cmp( 0.01 , cs.pixel_size ) , "failed to create a camera " ) ;
+
+    // test the ray_for_pixel function
+
+    init_camera ( 201, 101, PI/2 , &cs ) ;
+    ray_for_pixel ( &cs , 100 , 50 , &god_ray ) ;
+
+    point = get_point (0,0,0);
+    direction = get_vector (0,0,-1);
+
+    fail_unless ( compare_tuple(&point , &god_ray.org )) ;
+    fail_unless ( compare_tuple(&direction , &god_ray.dir ));
+
+    ray_for_pixel ( &cs , 0 , 0 , &god_ray ) ;
+
+    fail_unless ( compare_tuple ( &point , &god_ray.org ) ) ;
+
+    // test the render function
+
+    init_camera ( 11 , 11, PI/2 , &cs ) ;
+    from = get_point (0,0,-5);
+    to = get_point (0,0,0);
+    tuple up = get_vector(0,1,0);
+
+    view_transform ( &to , &from , &up , cs.transform );
+    render( &cs , &hello ) ;
+
+    color = get_color ( 0.380661 , 0.475827 , 0.285496 ) ;
+
+    fail_unless ( compare_tuple ( &canvas.mem[5*11+5] , &color ) , "error in render function" ) ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 END_TEST
 
@@ -513,6 +719,7 @@ int main(void)
     tcase_add_test(tc1_1, matrix_operations);
     tcase_add_test(tc1_1, transformations);
     tcase_add_test(tc1_1, ray_operations);
+    tcase_add_test(tc1_1, scene_world_creation);
 
     srunner_run_all(sr, CK_ENV);
     nf = srunner_ntests_failed(sr);

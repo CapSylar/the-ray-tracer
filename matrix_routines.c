@@ -120,7 +120,7 @@ float minor_mat4 ( mat4 x , int row , int col )
     return determ_mat3( res ) ;
 }
 
-float cofactor_mat4 ( mat4 x , int row , int col )
+ float cofactor_mat4 ( mat4 x , int row , int col )
 {
     float res = minor_mat4( x , row , col ) ;
     return ((row+col) % 2) ? -res : res ;

@@ -19,6 +19,7 @@ float cofactor_mat4 ( mat4 x , int row , int col ) ;
 float determ_mat4 ( mat4 x );
 int inverse_mat4 ( mat4 x , mat4 res ) ;
 void ident_mat4 ( mat4 res ) ;
+float minor_mat4 ( mat4 x , int row , int col ) ;
 
 
 #endif //RAY_TRACER_MATRIX_ROUTINES_H

@@ -1,71 +1,106 @@
-#include <stdio.h>
-#include <math.h>
 #include "defs.h"
 #include "factories.h"
 #include "canvas.h"
 #include "matrix_routines.h"
 #include "trans_routines.h"
 #include "ray.h"
-
-#define PIXEL 1000
+#include "world_view.h"
+#include <sys/time.h>
+#include <stdio.h>
 
 int main()
 {
-    init_canvas(PIXEL,PIXEL) ;
+    tuple to , from ;
+    camera cs ;
+    world hello ;
 
-    float wall_z = 10 ;
-    ray gold ;
-    gold.org = get_point( 0 , 0 , -5 ) ;
-    float wall_size = 7 ;
-    float pixel_size = wall_size / PIXEL ;
-    float half = wall_size / 2 ;
+    mat4 trans1 , trans2 , trans3 ;
 
-    object s = get_sphere() ;
-    s.mat.color = ( tuple ) { 0.3f , 0.1f , 0.8f } ;
-    mat4 tranform ;
-    scale( 1 , 1.1f , 0.5 , tranform );
+    init_world( &hello ) ;
 
-    // create the light source
+    translate(1.5 , 1 , -0.7f , trans1 ) ;
+    scale( 1.2f , 0.9f , 0.8f , trans2 ) ;
+    multiply_mat4( trans1 , trans2 , hello.objects[1].trans ) ;
+    hello.objects[1].mat.color = get_color( 0.47f , 0.60f , 0.788f ) ;
+    hello.objects[1].mat.specular = 0.3f ;
 
-    point_light light = get_plight( get_point(-15,15,-10) , get_color(1,1,1) ) ;
+    translate(-0.5f,1,0.5f, hello.objects[0].trans ) ;
+    hello.objects[0].mat.color = get_color( 0.94f , 0.15f , 0.89f ) ;
 
-    mat4 temp ;
-    mat4 final ;
-    rotate_z( PI/6 , temp );
-    multiply_mat4( temp , tranform , final ) ;
+    init_camera ( 100 , 100 , PI/2 , &cs ) ;
 
-    //set_transform( &s , final ) ;
+    from = get_point (0,1.5f,-5);
+    to = get_point (0,1,0);
+    tuple up = get_vector(0,1,0);
 
-    for ( int y = 0 ; y < PIXEL ; ++y )
-    {
-        float world_y = -half + pixel_size*y ;
-        for (int x = 0; x < PIXEL; ++x)
-        {
-            float world_x = -half + pixel_size*x ;
+    view_transform ( &to , &from , &up , cs.transform );
 
-            // we now have the point on the wall
-            tuple wall_point = get_point( world_x , world_y , wall_z ) ;
-            // calculate the direction of the ray
-            tuple dir = sub_tuples( &wall_point , &gold.org ) ;
-            normalize_tuple( &dir ) ;
+    // floor
+    object floor = get_sphere() ;
+    scale(10,0.01f,10 , floor.trans ) ;
+    floor.mat.color = get_color (1,0.9f,0.9f) ;
+    floor.mat.specular = 0 ;
 
-            gold.dir = dir ;
-            inter_collec coll = intersect( &gold , s ) ;
+    add_obj_world( &hello , &floor ) ;
 
-            if ( hit( &coll ) ) // there is a hit
-            {
-                // find the normal and the point of contact
-                tuple intersection = ray_pos( &gold , coll.xs[0].t ) ;
-                tuple normal = sphere_normal( &s , &intersection ) ;
-                tuple eye_dir = gold.dir ;
-                neg_tuple( &eye_dir ) ;
-                tuple color = lighting( &s.mat , &light , &intersection , &eye_dir , &normal ) ;
+    // left wall
 
-                canvas_write( color , x , PIXEL - y ) ;
-            }
-        }
-    }
+    object left_wall = get_sphere();
+    scale(10,0.01f,10 , left_wall.trans ) ;
+    left_wall.mat.color = get_color (1,0.9f,0.9f) ;
+    left_wall.mat.specular = 0;
 
-    canvas_ppm();
+
+    scale(10,0.01f,10, trans1 );
+    rotate_x(PI/2 , trans2 ) ;
+    multiply_mat4( trans2 , trans1 , trans3 ) ;
+    rotate_y(PI/4 , trans1 ) ;
+    multiply_mat4( trans1 , trans3 , trans2 ) ;
+    translate(0,0,5 , trans1 ) ;
+    multiply_mat4( trans1 ,  trans2 , left_wall.trans ) ;
+
+    add_obj_world( &hello , &left_wall );
+
+    // right wall
+
+    object right_wall = get_sphere();
+    scale(10,0.01f,10 , right_wall.trans ) ;
+    right_wall.mat.color = get_color (1,0.9f,0.9f) ;
+    right_wall.mat.specular = 0;
+
+    scale(10,0.01f,10, trans1 );
+    rotate_x(PI/2 , trans2 ) ;
+    multiply_mat4( trans2 , trans1 , trans3 ) ;
+    rotate_y(-PI/4 , trans1 ) ;
+    multiply_mat4( trans1 , trans3 , trans2 ) ;
+    translate(0,0,5 , trans1 ) ;
+    multiply_mat4( trans1 ,  trans2 , right_wall.trans ) ;
+
+    add_obj_world( &hello , &right_wall );
+
+    // add a sphere
+
+    object last = get_sphere();
+    translate(-2,0.8f ,-1.7f, trans1) ;
+    scale( 0.5f , 0.7f , 0.4f , trans2 ) ;
+    multiply_mat4( trans1 , trans2 , last.trans ) ;
+    last.mat.color = get_color( 0 , 1 , 0.1f) ;
+    last.mat.specular = 3 ;
+
+    add_obj_world( &hello , &last ) ;
+
+    struct timeval start , stop ;
+    gettimeofday( &start , 0 ) ;
+
+    render( &cs , &hello ) ;
+
+    gettimeofday( &stop , 0 ) ;
+
+    destroy_world( &hello ) ;
+
+    canvas_ppm() ;
+
+    printf("done in %lu seconds ", (stop.tv_sec - start.tv_sec)  );
+
     return 0;
 }

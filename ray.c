@@ -1,10 +1,9 @@
 // this file contains routines that work with rays
-
+#include <math.h>
 #include "defs.h"
 #include "factories.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdarg.h>
 #include "matrix_routines.h"
 #include "ray.h"
 
@@ -24,14 +23,14 @@ tuple ray_pos ( ray* x , float t )
     return add_tuples( &(x->org) , &ret ) ;
 }
 
-inter_collec intersect ( ray* r , object s )
+void intersect ( ray* r , object s , inter_collec* dest )
 {
     // take the matrix of the get_sphere , invert it and then transform the ray using it
     mat4 inver ;
     inverse_mat4( s.trans , inver ) ;
     ray new_r = transform_ray( r , inver ) ;
 
-    inter_collec ret ;
+    *dest = ( inter_collec ){0} ;
     tuple sphere_to_ray = get_point (0,0,0) ;
     sphere_to_ray = sub_tuples( &(new_r.org) , &sphere_to_ray ) ;
 
@@ -43,18 +42,18 @@ inter_collec intersect ( ray* r , object s )
 
     if ( disc < 0 ) // no solution
     {
-        ret.count = 0 ;
+        dest -> count = 0 ;
     }
     else
     {
-        ret.count = 2;
-        ret.xs[0].t = ( -b -sqrtf(disc)) / (2*a) ;
-        ret.xs[0].s = s ;
-        ret.xs[1].t = ( -b +sqrtf(disc)) / (2*a) ;
-        ret.xs[1].s = s ;
+        dest -> xs = malloc ( sizeof( intersection ) *  2 ) ;
+        dest -> count = 2;
+        dest -> xs[0].t = ( -b -sqrtf(disc)) / (2*a) ;
+        dest -> xs[0].obj = s ;
+        dest -> xs[1].t = ( -b +sqrtf(disc)) / (2*a) ;
+        dest -> xs[1].obj = s ;
     }
 
-    return ret;
 }
 
 object get_sphere ()
@@ -67,7 +66,7 @@ object get_sphere ()
     return sphere ;
 }
 
-int comp_inter ( const void* elem1 , const void* elem2 )
+int comp_intersections (const void* elem1 , const void* elem2 )
 {
     intersection i1 = *((intersection *) elem1) ;
     intersection i2 = *((intersection *) elem2) ;
@@ -78,7 +77,6 @@ int comp_inter ( const void* elem1 , const void* elem2 )
         return -1 ;
     else
         return 0 ;
-
 }
 
 /*inter_collec intersections( int num , ... )
@@ -98,13 +96,14 @@ int comp_inter ( const void* elem1 , const void* elem2 )
     va_end(ap);
 
     //sort the list according to the t value
-    qsort( col.xs , num , sizeof(intersection) , comp_inter ) ;
+    qsort( col.xs , num , sizeof(intersection) , comp_intersections ) ;
     return col;
 }*/
 
 void destroy_coll ( inter_collec* col )
 {
-    free(col->xs) ;
+    if ( col->xs )
+        free(col->xs) ;
 }
 
 intersection* hit( inter_collec* col )

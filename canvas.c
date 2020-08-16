@@ -55,6 +55,7 @@ void canvas_ppm () // converts the canvas to ppm file format
     // now save the file
     FILE* fptr = fopen( "ray.ppm" , "wb");
     fputs( ppm_str , fptr );
+    free ( ppm_str ) ;
 
     fclose(fptr) ;
 }
