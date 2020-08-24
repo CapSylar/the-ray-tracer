@@ -27,7 +27,7 @@ int main()
     translate(-0.5f,1,0.5f, hello.objects[0].trans ) ;
     hello.objects[0].mat.color = get_color( 0.94f , 0.15f , 0.89f ) ;
 
-    init_camera ( 100 , 100 , PI/2 , &cs ) ;
+    init_camera ( 1500 , 1500 , PI/2 , &cs ) ;
 
     from = get_point (0,1.5f,-5);
     to = get_point (0,1,0);

@@ -16,7 +16,7 @@ tuple sphere_normal ( object *s , tuple *world_p ) ;
 tuple reflect ( tuple* in , tuple* normal ) ;
 point_light get_plight ( tuple origin , tuple color ) ;
 void def_material ( material *def ) ;
-tuple lighting ( material* mat , point_light* light , tuple* point , tuple* eye_dir , tuple* normal ) ;
+tuple lighting ( material* mat , point_light* light , tuple* point , tuple* eye_dir , tuple* normal , int in_shadow ) ;
 int comp_intersections (const void* elem1 , const void* elem2 ) ;
 
 #endif //RAY_TRACER_RAY_H

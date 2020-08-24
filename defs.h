@@ -70,9 +70,10 @@ typedef struct
     int inside ; // if it hits the inside of a shape
     tuple p_contact ; // point of contact
     float t ;
-    object* obj ;
+    object obj ;
     tuple eye_v ;
     tuple normal ;
+    tuple adjusted_p ; // point that has been adjusted to remove the problem of self intersection for shadows
 
 } contact_calc ;
 

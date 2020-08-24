@@ -44,7 +44,6 @@ void add_obj_world ( world* w , object* new_obj )
 void inter_ray_world ( ray* r , world* w , inter_collec *dest )
 {
     // iterate over all the object in the world and intersect them
-
     // clear dest array to avoid problems
     *dest = ( inter_collec ) {0} ;
 
@@ -56,7 +55,7 @@ void inter_ray_world ( ray* r , world* w , inter_collec *dest )
     }
 
     // sort the list before returning
-    qsort( dest->xs , dest->count , sizeof(intersection) , comp_intersections ) ;
+    qsort( dest->xs , dest->count , sizeof(intersection) , comp_intersections ) ; // TODO: problem here
 }
 
 void merge_destroy ( inter_collec *dest , inter_collec *inter )
@@ -68,7 +67,7 @@ void merge_destroy ( inter_collec *dest , inter_collec *inter )
     dest-> xs = realloc( dest->xs , (dest->count + inter->count) * sizeof( intersection )) ;
     // copy the intersections to the destination
 
-    for ( int i = 0 ; i < inter->count ; ++i )
+    for ( int i = 0 ; i < inter->count ; ++i ) // TODO: use memove here
         dest->xs[dest->count + i] = inter->xs[i] ;
 
     dest->count += inter->count ;
@@ -77,34 +76,39 @@ void merge_destroy ( inter_collec *dest , inter_collec *inter )
 
 void compute_contact ( ray* r , intersection* i , contact_calc* dest ) // computers contract information used for shading and such
 {
-    dest->t = i->t ;
-    dest->obj = &(i->obj) ;
-    dest->eye_v = r->dir ;
-    neg_tuple(&(dest->eye_v)) ;
+    dest->t = i->t;
+    dest->obj = (i->obj);
+    dest->eye_v = r->dir;
+    neg_tuple(&(dest->eye_v));
 
-    dest->p_contact = ray_pos( r , dest->t ) ;
-    dest->normal = sphere_normal( dest->obj , &dest->p_contact ) ;
+    dest->p_contact = ray_pos(r, dest->t);
+    dest->normal = sphere_normal(&(dest->obj), &dest->p_contact);
 
-    dest->inside = dot_tuples( &dest->normal , &dest->eye_v ) < 0 ? 1 : 0  ;
+    dest->inside = dot_tuples(&dest->normal, &dest->eye_v) < 0 ? 1 : 0;
+    tuple offset = dest->normal;
+    mult_scalar_tuple(&offset, EPS*180 ); // TODO: EPS*180 used is too big, there seem to be a problem
+    dest->adjusted_p = add_tuples( &offset , &dest->p_contact );
 }
-
-tuple shade_hit( world* w , contact_calc* calc )
+tuple shade_hit( world* w , contact_calc* calc , int calc_shadows )
 {
-    return lighting( &calc->obj->mat , &w->light , &calc->p_contact , &calc->eye_v , &calc->normal ) ;
+    // first we see if the point is in shadow
+    int in_shadow = ( calc_shadows ) ? is_shadowed( w , &calc->adjusted_p ) : 0 ;
+    // tests if the point is shadowed by another object, cast a ray from point to see if it arrived to the light source
+    return lighting( &calc->obj.mat , &w->light , &calc->adjusted_p , &calc->eye_v , &calc->normal , in_shadow ) ;
 }
 
-tuple color_at ( world *w , ray *r )
+tuple color_at ( world *w , ray *r , int calc_shadows )
 {
     inter_collec interCollec ;
     intersection *inter ;
     inter_ray_world( r , w , &interCollec );
     if ( (inter = hit( &interCollec )) ) // if there is an intersection
     {
-        // we have a hit, compute the paramters then shade
+        // we have a hit, compute the parameters then shade
         contact_calc calculations ;
         compute_contact( r , inter , &calculations ) ;
         destroy_coll( &interCollec ) ;
-        return shade_hit( w , &calculations ) ;
+        return shade_hit( w , &calculations , calc_shadows  ) ;
     }
 
     // free the intersection collection
@@ -172,7 +176,7 @@ void init_camera (int hsize , int vsize , float fov , camera *c )
     else
     {
         c->half_width = half_view * aspect_ratio ; // TODO: possible error here , half_height should be divided only
-        c->half_height = half_view ;
+        c->half_height = half_view  ;
     }
 
     c->pixel_size = c->half_width*2 / hsize ;
@@ -208,16 +212,28 @@ void render( camera *c , world *w )
     for ( int y = 0 ; y < c->v_size ; ++y )
         for ( int x = 0; x < c->h_size ; ++x )
         {
-            if ( y == 5 && x == 5 )
-            {
-                int sdfdff = 0 ;
-            }
-
             ray god_ray ;
             ray_for_pixel( c , x , y , &god_ray );
-            tuple color = color_at( w , &god_ray ) ;
+            tuple color = color_at( w , &god_ray , 1 ) ;
             canvas_write( color , x , y ) ;
         }
+}
+
+int is_shadowed ( world* w , tuple *point)
+{
+    // tests if the point is shadowed by another object, cast a ray from point to see if it arrived to the light source
+    tuple point_to_light = sub_tuples( &w->light.position , point ) ;
+    float distance = mag_tuple(&point_to_light) ;
+    normalize_tuple( &point_to_light ) ;
+
+    // create a ray
+    ray god_ray = get_ray( point , &point_to_light ) ;
+    // cast the ray into the world
+    inter_collec intersections ;
+    inter_ray_world( &god_ray , w , &intersections ) ;
+    intersection* inter = hit( &intersections ) ;
+
+    return ( inter && (inter->t < distance) ) ; // there is an object lying between the point and the light source
 }
 
 

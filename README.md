@@ -20,3 +20,7 @@ then `make`
 
 <img src="screenshots/eoc_7.png" />
 
+### end of chapter 8
+
+<img src="screenshots/eoc_8.png" />
+

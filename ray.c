@@ -181,7 +181,7 @@ void def_material ( material *def )
     def->shininess = 200 ;
 }
 
-tuple lighting ( material* mat , point_light* light , tuple* point , tuple* eye_dir , tuple* normal )
+tuple lighting ( material* mat , point_light* light , tuple* point , tuple* eye_dir , tuple* normal , int in_shadow )
 {
     tuple ambient , diffuse , specular ;
     // we will calculate the 3 components of the phong shading model
@@ -191,6 +191,10 @@ tuple lighting ( material* mat , point_light* light , tuple* point , tuple* eye_
     //first calculate the ambient color
     ambient = eff_color ;
     mult_scalar_tuple( &ambient , mat->ambient ) ;
+
+    // if the point is in shadow, then the ambient component suffices
+    if ( in_shadow )
+        return ambient ;
 
     // calculate if we can see light on this side of the surface
     float light_dot_normal = dot_tuples( &light_dir , normal ) ;
