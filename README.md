@@ -13,14 +13,19 @@ then `make`
 ## progress timeline 
 
 ### end of chapter 6 
+basic raytracing done,sphere shades correctly
 
 <img src="/screenshots/sphere.png"/>
 
 ### end of chapter 7
+added scenes,the possibility of having several objects
 
 <img src="screenshots/eoc_7.png" />
 
 ### end of chapter 8
+added shadows
 
 <img src="screenshots/eoc_8.png" />
+
+
 
