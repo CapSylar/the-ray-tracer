@@ -1,4 +1,5 @@
 // this file contains routines that work with rays
+#include <stdio.h>
 #include <math.h>
 #include "defs.h"
 #include "factories.h"
@@ -29,13 +30,31 @@ void intersect ( ray* r , object s , inter_collec* dest )
     mat4 inver ;
     inverse_mat4( s.trans , inver ) ;
     ray new_r = transform_ray( r , inver ) ;
+    *dest = ( inter_collec ){0} ; // for sanity
 
-    *dest = ( inter_collec ){0} ;
+    // determine what kind of shape we are working with
+
+    switch ( s.type )
+    {
+        case SPHERE_OBJECT:
+            intersect_sphere( &new_r , s , dest ) ;
+            break ;
+        case PLANE_OBJECT:
+            intersect_plane ( &new_r , s , dest ) ;
+            break ;
+        default:
+            fprintf( stderr , "shape type not supported\n" ) ;
+            break ;
+    }
+
+}
+void intersect_sphere ( ray *r , object s , inter_collec* dest )
+{
     tuple sphere_to_ray = get_point (0,0,0) ;
-    sphere_to_ray = sub_tuples( &(new_r.org) , &sphere_to_ray ) ;
+    sphere_to_ray = sub_tuples( &(r->org) , &sphere_to_ray ) ;
 
-    float a = dot_tuples( &(new_r.dir) , &(new_r.dir) ) ;
-    float b = 2 * dot_tuples( &(new_r.dir) , &sphere_to_ray ) ;
+    float a = dot_tuples( &(r->dir) , &(r->dir) ) ;
+    float b = 2 * dot_tuples( &(r->dir) , &sphere_to_ray ) ;
     float c = dot_tuples( &sphere_to_ray , &sphere_to_ray ) - 1 ; // could have used value^2 , 1 because radius is 1
 
     float disc = b*b -4*a*c ;
@@ -53,17 +72,37 @@ void intersect ( ray* r , object s , inter_collec* dest )
         dest -> xs[1].t = ( -b +sqrtf(disc)) / (2*a) ;
         dest -> xs[1].obj = s ;
     }
-
 }
+void intersect_plane ( ray *r , object s , inter_collec* dest  )
+{
+    if ( fabsf(r->dir.y) < EPS ) // will *never* intersect the plane
+    {
+        dest->count = 0 ;
+        return;
+    }
 
+    dest->xs = malloc ( sizeof(intersection) ) ;
+    dest->count = 1 ;
+    dest->xs[0].t = -(r->org.y) / r->dir.y ;
+    dest->xs[0].obj = s ;
+}
 object get_sphere ()
 {
     object sphere;
-    sphere.id = rand();
     ident_mat4( sphere.trans ) ;
     def_material(&sphere.mat) ;
+    sphere.type = SPHERE_OBJECT ;
 
     return sphere ;
+}
+object get_plane ()
+{
+    object plane;
+    ident_mat4( plane.trans ) ;
+    def_material(&plane.mat) ;
+    plane.type = PLANE_OBJECT ;
+
+    return plane ;
 }
 
 int comp_intersections (const void* elem1 , const void* elem2 )
@@ -137,23 +176,49 @@ void set_transform ( object *o , mat4 trans )
     memcpy( o->trans , trans , 16 * sizeof(float) );
 }
 
-tuple sphere_normal ( object *s , tuple *world_p )
+tuple normal_at (object *s , tuple *world_p )
 {
     // first revert the point to object coordinates
     tuple local , ret ;
     mat4 inv ;
     inverse_mat4( s->trans , inv ) ;
     multiply_mat4_tuple( inv , world_p , &local ) ;
-    // calculate the "local" normal by subtracting from the origin of the sphere which is at 0
-    local.w = 0 ;// hack
+    // calculate the local normal for the shape
+    local = local_normal ( s , &local ) ;
+
     // convert the normal back to world coordinates by multiplying with transpose of the inverse
     mat4 final ;
     transpose_mat4( inv , final ) ;
     multiply_mat4_tuple( final , &local , &ret  ) ;
-    ret.w = 0 ; // hack again
+    ret.w = 0 ; // hack again, convert to vector
     normalize_tuple( &ret );
 
     return ret ;
+}
+tuple local_normal ( object* s , tuple* local_p )
+{
+    tuple normal ;
+    switch ( s->type )
+    {
+        case SPHERE_OBJECT:
+            normal = sphere_local_normal( s , local_p ) ;
+            break ;
+        case PLANE_OBJECT:
+            normal = ( tuple ) { 0 , 1 , 0 , 0 } ; // plane is on XZ
+            break ;
+        default:
+            fprintf( stderr , "error, shape not supported") ;
+            break ;
+    }
+
+    return normal ;
+}
+tuple sphere_local_normal ( object *s , tuple* local_p  )
+{ // just returns the normal vector in the local system
+  // calculate the "local" normal by subtracting from the origin of the sphere which is at 0
+  tuple ret = *local_p ;
+  ret.w = 0 ; // hack , convert to vector
+  return ret ;
 }
 
 tuple reflect ( tuple* in , tuple* normal )

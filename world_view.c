@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "world_view.h"
 #include "defs.h"
 #include "ray.h"
@@ -65,6 +66,8 @@ void merge_destroy ( inter_collec *dest , inter_collec *inter )
         return ;
 
     dest-> xs = realloc( dest->xs , (dest->count + inter->count) * sizeof( intersection )) ;
+    if ( dest->xs == 0 )
+        fprintf( stderr , "failed to realloc\n") ;
     // copy the intersections to the destination
 
     for ( int i = 0 ; i < inter->count ; ++i ) // TODO: use memove here
@@ -82,11 +85,11 @@ void compute_contact ( ray* r , intersection* i , contact_calc* dest ) // comput
     neg_tuple(&(dest->eye_v));
 
     dest->p_contact = ray_pos(r, dest->t);
-    dest->normal = sphere_normal(&(dest->obj), &dest->p_contact);
+    dest->normal = normal_at(&(dest->obj), &dest->p_contact);
 
     dest->inside = dot_tuples(&dest->normal, &dest->eye_v) < 0 ? 1 : 0;
     tuple offset = dest->normal;
-    mult_scalar_tuple(&offset, EPS*180 ); // TODO: EPS*180 used is too big, there seem to be a problem
+    mult_scalar_tuple(&offset, EPS*200 ); // TODO: EPS*200 used is too big, there seem to be a problem
     dest->adjusted_p = add_tuples( &offset , &dest->p_contact );
 }
 tuple shade_hit( world* w , contact_calc* calc , int calc_shadows )
@@ -232,8 +235,11 @@ int is_shadowed ( world* w , tuple *point)
     inter_collec intersections ;
     inter_ray_world( &god_ray , w , &intersections ) ;
     intersection* inter = hit( &intersections ) ;
+    int isHit = inter != 0 ;
+    float t = isHit ? inter->t : -1  ;
+    destroy_coll( &intersections ) ; // free the collection
 
-    return ( inter && (inter->t < distance) ) ; // there is an object lying between the point and the light source
+    return ( isHit && t < distance) ; // there is an object lying between the point and the light source
 }
 
 

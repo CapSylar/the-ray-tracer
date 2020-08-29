@@ -6,6 +6,9 @@ typedef float mat4[16] ;
 typedef float mat3[9] ;
 typedef float mat2[4] ;
 
+#define SPHERE_OBJECT 0
+#define PLANE_OBJECT 1
+
 typedef struct
 {
     float x,y,z,w ;
@@ -38,7 +41,7 @@ typedef struct
 
 typedef struct
 {
-    int id ;
+    int type;
     mat4 trans;
     material mat;
 } object ;

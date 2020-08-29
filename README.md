@@ -27,5 +27,10 @@ added shadows
 
 <img src="screenshots/eoc_8.png" />
 
+### end of chapter 9
+added planes
+
+<img src="screenshots/eoc_9.png"/>
+
 
 
