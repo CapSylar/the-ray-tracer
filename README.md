@@ -9,6 +9,7 @@ then `make`
 ## TODO
 - clean the project file structure
 - optimizations
+- clean API
 
 ## progress timeline 
 
@@ -32,5 +33,8 @@ added planes
 
 <img src="screenshots/eoc_9.png"/>
 
+### end of chapter 10
+added patterns and the option to nest them
 
+<img src="screenshots/eoc_10.png" />
 

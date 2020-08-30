@@ -9,6 +9,8 @@ typedef float mat2[4] ;
 #define SPHERE_OBJECT 0
 #define PLANE_OBJECT 1
 
+enum pattern_type { PATTERN_CHECKER , PATTERN_GRADIENT , PATTERN_STRIPES , PATTERN_RING };
+
 typedef struct
 {
     float x,y,z,w ;
@@ -33,13 +35,36 @@ typedef struct
 
 } point_light ;
 
+struct object ;
+
+typedef struct pattern
+{
+    tuple (*pattern_at)( struct object* o , struct pattern* , tuple* ) ; // function pointer for patterns
+    mat4 pattern_trans ;// controls the pattern
+    //color1
+    int isNested1 ;
+    tuple color1 ;
+    struct pattern* pattern1;
+    // color2
+    int isNested2;
+    tuple color2 ;
+    struct pattern* pattern2;
+
+} pattern ;
+
+
+
 typedef struct
 {
     float ambient,diffuse,specular,shininess ;
     tuple color ;
+
+    int has_pattern ;
+    pattern current_pattern ;
+
 } material ;
 
-typedef struct
+typedef struct object
 {
     int type;
     mat4 trans;
@@ -95,8 +120,9 @@ typedef struct
 
 } camera ;
 
+
 #define EPS 0.00001f // good enough for me :)
 #define float_cmp(a,b) (( fabs((a)-(b)) < EPS ))
-#define PI 3.14159265359
+#define PI 3.14159265359f
 
 #endif //RAY_TRACER_DEFS_H

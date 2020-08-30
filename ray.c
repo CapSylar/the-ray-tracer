@@ -7,6 +7,7 @@
 #include <string.h>
 #include "matrix_routines.h"
 #include "ray.h"
+#include "patterns.h"
 
 ray get_ray ( tuple* origin , tuple* direction )
 {
@@ -244,13 +245,19 @@ void def_material ( material *def )
     def->diffuse = 0.9f ;
     def->specular = 0.9f ;
     def->shininess = 200 ;
+    def->has_pattern = 0 ;
 }
 
-tuple lighting ( material* mat , point_light* light , tuple* point , tuple* eye_dir , tuple* normal , int in_shadow )
+tuple lighting ( material* mat , object* o , point_light* light , tuple* point , tuple* eye_dir , tuple* normal , int in_shadow )
 {
     tuple ambient , diffuse , specular ;
     // we will calculate the 3 components of the phong shading model
-    tuple eff_color = hadamard_prod( &(light->intensity) , &(mat->color) ) ;
+    //first determine the base color of the object
+
+    tuple used_color ;
+    used_color = ( mat->has_pattern ) ? pattern_at_object( o , &mat->current_pattern , point ) : mat->color ;
+
+    tuple eff_color = hadamard_prod( &(light->intensity) , &used_color ) ;
     tuple light_dir = sub_tuples( &(light->position) , point ) ;
     normalize_tuple( &light_dir ) ;
     //first calculate the ambient color

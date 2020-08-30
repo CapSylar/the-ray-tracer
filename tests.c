@@ -13,6 +13,7 @@
 #include "ray.h"
 #include "world_view.h"
 #include <stdio.h>
+#include "patterns.h"
 
 struct canvas
 {
@@ -35,7 +36,7 @@ tuple b = ( tuple ) { 2 , 3 , 4 } ;
 
 START_TEST(test_tuple_creation)
 {
-#line 29
+#line 30
     tuple test = get_point(3,1,1) ;
     fail_unless( compare_tuple( &test, &x ) , "failure in point creation") ;
     test = get_vector(3,2,0) ;
@@ -46,7 +47,7 @@ END_TEST
 
 START_TEST(tuple_operation)
 {
-#line 35
+#line 36
     tuple res = ( tuple ) { 12 , 6 , 8 , 1 } ;
     tuple got = add_tuples( &z , &c ) ;
     fail_unless ( compare_tuple( &got , &res ) , "failure in tuple addition" ) ;
@@ -79,7 +80,7 @@ END_TEST
 
 START_TEST(color_operations)
 {
-#line 63
+#line 64
     // only test the hadamard product, all other function work
     tuple color1 = get_color ( 0.5 , 1 , 0 ) ;
     tuple color2 = get_color ( 1 , 0.25 , 0 ) ;
@@ -93,7 +94,7 @@ END_TEST
 
 START_TEST(matrix_operations)
 {
-#line 72
+#line 73
     mat2 x = { 1 , 1 , 1 , 1 } ;
     mat2 y = { 1 , 1 , 1 , 1 } ;
 
@@ -189,7 +190,7 @@ END_TEST
 
 START_TEST(transformations)
 {
-#line 163
+#line 164
     mat4 x ;
     translate ( 5 , -3 , 2 , x ) ;
     tuple point = get_point( -3 ,4 , 5 ) ;
@@ -310,7 +311,7 @@ END_TEST
 
 START_TEST(ray_operations)
 {
-#line 279
+#line 280
     tuple point = get_point ( 2, 3 , 4 );
     tuple direction = get_vector ( 1 , 0 ,0 ) ;
     ray n = get_ray ( &point , &direction) ;
@@ -469,7 +470,7 @@ START_TEST(ray_operations)
     tuple eyev = get_vector ( 0,0,-1 );
     tuple normalv = get_vector ( 0,0,-1 ) ;
     light = ( point_light ) { ( tuple ) { 0,0,-10,1 } , ( tuple ) { 1,1,1,0}  } ;
-    tuple result = lighting ( &mat , &light , &point , &eyev , &normalv , 0 ) ;
+    tuple result = lighting ( &mat , 0 , &light , &point , &eyev , &normalv , 0 ) ;
 
     res = get_color ( 1.9 , 1.9 , 1.9 ) ;
 
@@ -477,7 +478,7 @@ START_TEST(ray_operations)
 
     eyev = get_vector ( 0 , 0.707106 , -0.707106 ) ;
     normalv = get_vector ( 0 , 0 , -1 );
-    result = lighting ( &mat , &light , &point , &eyev , &normalv , 0 ) ;
+    result = lighting ( &mat , 0 ,  &light , &point , &eyev , &normalv , 0 ) ;
 
     res = get_color ( 1 , 1 , 1 ) ;
 
@@ -487,7 +488,7 @@ START_TEST(ray_operations)
     eyev = get_vector ( 0 , 0 , -1 ) ;
     light = ( point_light ) { ( tuple ) { 0,10,-10,1 } , ( tuple ) { 1,1,1,0}  } ;
     normalv = get_vector ( 0 , 0 , -1 );
-    result = lighting ( &mat , &light , &point , &eyev , &normalv , 0 ) ;
+    result = lighting ( &mat , 0 , &light , &point , &eyev , &normalv , 0 ) ;
 
     res = get_color ( 0.7364 , 0.7364 , 0.7364 ) ;
 
@@ -496,7 +497,7 @@ START_TEST(ray_operations)
     eyev = get_vector ( 0 , -0.707106  , -0.707106  ) ;
     light = ( point_light ) { ( tuple ) { 0,10,-10,1 } , ( tuple ) { 1,1,1,0}  } ;
     normalv = get_vector ( 0 , 0 , -1 );
-    result = lighting ( &mat , &light , &point , &eyev , &normalv , 0 ) ;
+    result = lighting ( &mat , 0 ,  &light , &point , &eyev , &normalv , 0 ) ;
 
     res = get_color ( 1.6362 , 1.6362  , 1.6362  ) ;
 
@@ -506,7 +507,7 @@ START_TEST(ray_operations)
     normalv = get_vector ( 0 , 0 , -1 );
     light = ( point_light ) { ( tuple ) { 0,0,10,1 } , ( tuple ) { 1,1,1,0}  } ;
 
-    result = lighting ( &mat , &light , &point , &eyev , &normalv , 0 ) ;
+    result = lighting ( &mat , 0 , &light , &point , &eyev , &normalv , 0 ) ;
 
     res = get_color ( 0.1 , 0.1   , 0.1   ) ;
 
@@ -519,7 +520,7 @@ END_TEST
 
 START_TEST(scene_world_creation)
 {
-#line 483
+#line 484
     world hello ;
     init_world ( &hello ) ;
 
@@ -684,7 +685,7 @@ END_TEST
 
 START_TEST(shadows)
 {
-#line 643
+#line 644
     point_light light = get_plight ( get_point(0,0,-10) , get_color(1,1,1) ) ;
     tuple eyev = get_vector ( 0,0,-1 );
     tuple normalv = get_vector ( 0,0,-1 );
@@ -692,7 +693,7 @@ START_TEST(shadows)
     material mat ;
     def_material ( &mat ) ; // default material
     tuple position = get_point (0,0,0) ;
-    tuple result = lighting ( &mat , &light , &position , &eyev , &normalv , 1 ) ;
+    tuple result = lighting ( &mat , 0 , &light , &position , &eyev , &normalv , 1 ) ;
 
     fail_unless ( compare_tuple( &result , &should_get ) , "failed to properly calculate shadows" ) ;
 
@@ -736,7 +737,7 @@ END_TEST
 
 START_TEST(plane_implementation)
 {
-#line 690
+#line 691
     tuple point = get_point (0,0,0);
     object plane = get_plane ();
     tuple res = local_normal (&plane , &point ) ;
@@ -781,6 +782,174 @@ START_TEST(plane_implementation)
     intersect_plane ( &god_ray , plane , &collec ) ;
     fail_unless ( collec.count == 1 , "failed to correctly compute the intersection of ray and plane " ) ;
     fail_unless ( collec.xs[0].t == 1 , "failed to correctly compute the intersection of ray and plane" ) ;
+
+
+}
+END_TEST
+
+START_TEST(patterns)
+{
+#line 738
+    tuple black = get_color (0,0,0) ;
+    tuple white = get_color (1,1,1) ;
+    pattern_colors x = get_pattern ( get_color(1,1,1) , get_color(0,0,0) )  ;
+    fail_unless ( compare_tuple(&x.color1 , &white) , "failed to create pattern " ) ;
+    fail_unless ( compare_tuple(&x.color2 , &black ) , "failed to create pattern" ) ;
+
+    tuple point = get_point (0,0,0) ;
+    tuple res = stripe_pattern_at ( &x , &point ) ;
+
+    fail_unless ( compare_tuple ( &res , &white) , "failed to determine stripe color for a point" ) ;
+    point = get_point( 0,1,0 ) ;
+    res = stripe_pattern_at ( &x , &point );
+
+    fail_unless ( compare_tuple ( &res , &white ) , "failed to determine stripe color for a point" ) ;
+    point = get_point( 0,2,0 ) ;
+    res = stripe_pattern_at ( &x , &point );
+
+    fail_unless ( compare_tuple ( &res , &white ) , "failed to determine stripe color for a point" ) ;
+
+    // in the Z direction
+    point = get_point (0,0,0) ;
+    res = stripe_pattern_at ( &x , &point ) ;
+
+    fail_unless ( compare_tuple ( &res , &white) , "failed to determine stripe color for a point" ) ;
+    point = get_point( 0,0,1) ;
+    res = stripe_pattern_at ( &x , &point );
+
+    fail_unless ( compare_tuple ( &res , &white ) , "failed to determine stripe color for a point" ) ;
+    point = get_point( 0,0,2 ) ;
+    res = stripe_pattern_at ( &x , &point );
+
+    fail_unless ( compare_tuple ( &res , &white ) , "failed to determine stripe color for a point" ) ;
+
+
+    // in the x direction
+    point = get_point(0,0,0) ;
+    res = stripe_pattern_at (&x , &point) ;
+
+    fail_unless ( compare_tuple ( &res , &white ) , "failed to determine stripe color for a point" ) ;
+
+    point = get_point(0.9,0,0) ;
+    res = stripe_pattern_at (&x , &point) ;
+
+    fail_unless ( compare_tuple ( &res , &white ) , "failed to determine stripe color for a point" ) ;
+
+    point = get_point(1,0,0) ;
+    res = stripe_pattern_at (&x , &point) ;
+
+    fail_unless ( compare_tuple ( &res , &black ) , "failed to determine stripe color for a point" ) ;
+
+    point = get_point(-0.1f,0,0) ;
+    res = stripe_pattern_at (&x , &point) ;
+
+    fail_unless ( compare_tuple ( &res , &black ) , "failed to determine stripe color for a point" ) ;
+
+    // test object stripe function
+
+    object s = get_sphere() ;
+    scale ( 2,2,2 , s.trans ) ;
+    s.mat.has_pattern = 1 ;
+    s.mat.pattern = get_pattern ( get_color(1,1,1) , get_color(0,0,0) )  ;
+    s.mat.call = stripe_pattern_at ;
+    point = get_point (1.5f,0,0) ;
+    res = pattern_at_object ( &s , &point ) ;
+
+    fail_unless ( compare_tuple( &res , &white ) , "failed to determine the correct stripe color") ;
+
+    s = get_sphere() ;
+    s.mat.has_pattern = 1 ;
+    s.mat.pattern = x ;
+    s.mat.call = stripe_pattern_at ;
+    scale( 2,2,2, s.mat.pattern_trans );
+    point = get_point( 1.5f , 0 , 0 ) ;
+
+    res = pattern_at_object ( &s , &point ) ;
+
+    fail_unless ( compare_tuple( &res , &white ) , "failed to determine the correct stripe color") ;
+
+    // test the gradient patterns
+
+    pattern_colors pat = get_pattern ( get_color(1,1,1) , get_color(0,0,0) )  ;
+    point = get_point(0,0,0);
+    res = gradient_pattern_at ( &pat , &point ) ;
+
+    fail_unless ( compare_tuple(&res , &white) , "failed to create a gradient color") ;
+
+    point = get_point(0.25,0,0) ;
+    res = gradient_pattern_at( &pat , &point );
+    tuple color = get_color (0.75 , 0.75 , 0.75);
+    fail_unless ( compare_tuple(&res , &color) , "failed to create a gradient color") ;
+
+    point = get_point(0.5,0,0) ;
+    res = gradient_pattern_at( &pat , &point );
+    color = get_color (0.5 , 0.5 , 0.5);
+    fail_unless ( compare_tuple(&res , &color) , "failed to create a gradient color") ;
+
+    point = get_point(0.75,0,0) ;
+    res = gradient_pattern_at( &pat , &point );
+    color = get_color (0.25 , 0.25 , 0.25);
+    fail_unless ( compare_tuple(&res , &color) , "failed to create a gradient color") ;
+
+    // test ring pattern
+
+    point = get_point(0,0,0) ;
+    res = ring_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &white ) , "failed to create a ring pattern " ) ;
+
+    point = get_point(1,0,0) ;
+    res = ring_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &black ) , "failed to create a ring pattern " ) ;
+
+    point = get_point(0,0,1) ;
+    res = ring_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &black ) , "failed to create a ring pattern " ) ;
+
+    point = get_point(0.708,0,0.708) ;
+    res = ring_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &black ) , "failed to create a ring pattern " ) ;
+
+    // testing the checker pattern
+
+    point = get_point(0,0,0) ;
+    res = checker_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &white ) , "failed to create a ring pattern " ) ;
+
+    point = get_point(0.99,0,0) ;
+    res = checker_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &white ) , "failed to create a ring pattern " ) ;
+
+    point = get_point(1.01,0,0) ;
+    res = checker_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &black ) , "failed to create a ring pattern " ) ;
+
+
+    point = get_point(0,0,0) ;
+    res = checker_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &white ) , "failed to create a ring pattern " ) ;
+
+    point = get_point(0,0.99,0) ;
+    res = checker_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &white ) , "failed to create a ring pattern " ) ;
+
+    point = get_point(0,1.01,0) ;
+    res = checker_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &black ) , "failed to create a ring pattern " ) ;
+
+
+    point = get_point(0,0,0) ;
+    res = checker_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &white ) , "failed to create a ring pattern " ) ;
+
+    point = get_point(0,0,0.99) ;
+    res = checker_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &white ) , "failed to create a ring pattern " ) ;
+
+    point = get_point(0,0,1.01) ;
+    res = checker_pattern_at ( &pat , &point ) ;
+    fail_unless ( compare_tuple( &res , &black ) , "failed to create a ring pattern " ) ;
+
+
 }
 END_TEST
 
@@ -801,6 +970,7 @@ int main(void)
     tcase_add_test(tc1_1, scene_world_creation);
     tcase_add_test(tc1_1, shadows);
     tcase_add_test(tc1_1, plane_implementation);
+    tcase_add_test(tc1_1, patterns);
 
     srunner_run_all(sr, CK_ENV);
     nf = srunner_ntests_failed(sr);

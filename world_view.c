@@ -88,6 +88,10 @@ void compute_contact ( ray* r , intersection* i , contact_calc* dest ) // comput
     dest->normal = normal_at(&(dest->obj), &dest->p_contact);
 
     dest->inside = dot_tuples(&dest->normal, &dest->eye_v) < 0 ? 1 : 0;
+
+    if ( dest->inside ) // flip the normal for correct calculations/
+        neg_tuple( &dest->normal ) ;
+
     tuple offset = dest->normal;
     mult_scalar_tuple(&offset, EPS*200 ); // TODO: EPS*200 used is too big, there seem to be a problem
     dest->adjusted_p = add_tuples( &offset , &dest->p_contact );
@@ -97,7 +101,7 @@ tuple shade_hit( world* w , contact_calc* calc , int calc_shadows )
     // first we see if the point is in shadow
     int in_shadow = ( calc_shadows ) ? is_shadowed( w , &calc->adjusted_p ) : 0 ;
     // tests if the point is shadowed by another object, cast a ray from point to see if it arrived to the light source
-    return lighting( &calc->obj.mat , &w->light , &calc->adjusted_p , &calc->eye_v , &calc->normal , in_shadow ) ;
+    return lighting( &calc->obj.mat , &calc->obj ,&w->light , &calc->adjusted_p , &calc->eye_v , &calc->normal , in_shadow ) ;
 }
 
 tuple color_at ( world *w , ray *r , int calc_shadows )
