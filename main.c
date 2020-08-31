@@ -21,7 +21,7 @@ int main()
     init_world( &hello ) ;
     hello.light.position = get_point(-10,7,-10) ;
 
-    translate(1.5f , 1 , 0.3f , trans1 ) ;
+    translate(1.5f , 1 , -1 , trans1 ) ;
     scale( 1.2f , 1.9f , 0.8f , trans2 ) ;
     multiply_mat4( trans1 , trans2 , hello.objects[1].trans ) ;
     hello.objects[1].mat.color = get_color( 0.47f , 0.60f , 0.788f ) ;
@@ -29,12 +29,17 @@ int main()
     color1 = get_color( 1 , 1  ,1 ) ;
     color2 = get_color( 0 , 0 , 0 ) ;
     hello.objects[1].mat.has_pattern = 1;
+    hello.objects[1].mat.reflective = 0.3f ;
     hello.objects[1].mat.current_pattern = get_pattern( PATTERN_STRIPES , 0 , 0 , &color1 , &color2 ) ;
     scale( 0.2f , 0.2f ,0.2f ,hello.objects[1].mat.current_pattern.pattern_trans ) ;
-    translate(-0.5f,1,0.5f, hello.objects[0].trans ) ;
-    hello.objects[0].mat.color = get_color( 0.94f , 0.15f , 0.89f ) ;
+    scale ( 1.2f , 1.2f , 1.2f , trans1 ) ;
+    translate(-0.5f,1,0.5f, trans2 ) ;
+    multiply_mat4( trans1 , trans2 , hello.objects[0].trans ) ;
+    //hello.objects[0].mat.color = get_color( 0.94f , 0.15f , 0.89f ) ;
+    hello.objects[0].mat.color = get_color( 0,0,0 ) ;
+    hello.objects[0].mat.reflective = 0.8f ;
 
-    init_camera ( 3000 , 3000 , PI/2 , &cs ) ;
+    init_camera ( 200 , 200 , PI/2 , &cs ) ;
 
     from = get_point (0,1.5f,-5);
     to = get_point (0,1,0);

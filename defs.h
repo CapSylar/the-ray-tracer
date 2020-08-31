@@ -56,7 +56,7 @@ typedef struct pattern
 
 typedef struct
 {
-    float ambient,diffuse,specular,shininess ;
+    float ambient,diffuse,specular,shininess,reflective ;
     tuple color ;
 
     int has_pattern ;
@@ -102,6 +102,7 @@ typedef struct
     tuple eye_v ;
     tuple normal ;
     tuple adjusted_p ; // point that has been adjusted to remove the problem of self intersection for shadows
+    tuple reflectv ; // reflection vector from point
 
 } contact_calc ;
 

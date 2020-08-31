@@ -34,7 +34,7 @@ void destroy_world ( world *dead )
     dead->obj_count = 0;
 }
 
-void add_obj_world ( world* w , object* new_obj )
+void add_obj_world ( world* w , object* new_obj )  //TODO: change the way the objects are stored
 {
     w->obj_count++ ;
     w->objects = realloc( w->objects , sizeof(object) * w->obj_count ) ;
@@ -91,20 +91,27 @@ void compute_contact ( ray* r , intersection* i , contact_calc* dest ) // comput
 
     if ( dest->inside ) // flip the normal for correct calculations/
         neg_tuple( &dest->normal ) ;
+    // calculate the reflection vector
+
+    dest->reflectv = reflect( &r->dir , &dest->normal ) ;
 
     tuple offset = dest->normal;
     mult_scalar_tuple(&offset, EPS*200 ); // TODO: EPS*200 used is too big, there seem to be a problem
     dest->adjusted_p = add_tuples( &offset , &dest->p_contact );
 }
-tuple shade_hit( world* w , contact_calc* calc , int calc_shadows )
+tuple shade_hit( world* w , contact_calc* calc , int calc_shadows , int depth_limit )
 {
     // first we see if the point is in shadow
     int in_shadow = ( calc_shadows ) ? is_shadowed( w , &calc->adjusted_p ) : 0 ;
     // tests if the point is shadowed by another object, cast a ray from point to see if it arrived to the light source
-    return lighting( &calc->obj.mat , &calc->obj ,&w->light , &calc->adjusted_p , &calc->eye_v , &calc->normal , in_shadow ) ;
+    tuple surface =  lighting( &calc->obj.mat , &calc->obj ,&w->light , &calc->adjusted_p , &calc->eye_v , &calc->normal , in_shadow ) ;
+
+    tuple reflected = reflected_color( w , calc , depth_limit ) ;
+
+    return add_tuples( &surface , &reflected );
 }
 
-tuple color_at ( world *w , ray *r , int calc_shadows )
+tuple color_at ( world *w , ray *r , int calc_shadows , int depth_limit )
 {
     inter_collec interCollec ;
     intersection *inter ;
@@ -115,7 +122,7 @@ tuple color_at ( world *w , ray *r , int calc_shadows )
         contact_calc calculations ;
         compute_contact( r , inter , &calculations ) ;
         destroy_coll( &interCollec ) ;
-        return shade_hit( w , &calculations , calc_shadows  ) ;
+        return shade_hit( w , &calculations , calc_shadows , depth_limit ) ;
     }
 
     // free the intersection collection
@@ -221,7 +228,7 @@ void render( camera *c , world *w )
         {
             ray god_ray ;
             ray_for_pixel( c , x , y , &god_ray );
-            tuple color = color_at( w , &god_ray , 1 ) ;
+            tuple color = color_at( w , &god_ray , 1 , 3 ) ;
             canvas_write( color , x , y ) ;
         }
 }

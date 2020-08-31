@@ -11,7 +11,7 @@ then `make`
 - optimizations
 - clean API
 
-## progress timeline 
+## Progress timeline 
 
 ### end of chapter 6 
 basic raytracing done,sphere shades correctly
@@ -38,3 +38,7 @@ added patterns and the option to nest them
 
 <img src="screenshots/eoc_10.png" />
 
+### relfections
+added reflections 
+
+<img src="screenshots/moc_11.png" /> 

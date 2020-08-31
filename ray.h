@@ -23,5 +23,6 @@ point_light get_plight ( tuple origin , tuple color ) ;
 void def_material ( material *def ) ;
 tuple lighting ( material* mat , object* o , point_light* light , tuple* point , tuple* eye_dir , tuple* normal , int in_shadow ) ;
 int comp_intersections (const void* elem1 , const void* elem2 ) ;
+tuple reflected_color ( world* w , contact_calc* calc , int depth_limit ) ;
 
 #endif //RAY_TRACER_RAY_H

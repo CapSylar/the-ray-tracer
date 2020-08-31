@@ -8,6 +8,7 @@
 #include "matrix_routines.h"
 #include "ray.h"
 #include "patterns.h"
+#include "world_view.h"
 
 ray get_ray ( tuple* origin , tuple* direction )
 {
@@ -225,8 +226,9 @@ tuple sphere_local_normal ( object *s , tuple* local_p  )
 tuple reflect ( tuple* in , tuple* normal )
 {
     float temp = 2 * dot_tuples( in , normal ) ;
-    mult_scalar_tuple( normal , temp ) ;
-    return sub_tuples( in , normal ) ;
+    tuple x = *normal ;
+    mult_scalar_tuple( &x , temp ) ;
+    return sub_tuples( in , &x ) ;
 }
 
 point_light get_plight ( tuple origin , tuple color )
@@ -246,6 +248,7 @@ void def_material ( material *def )
     def->specular = 0.9f ;
     def->shininess = 200 ;
     def->has_pattern = 0 ;
+    def->reflective = 0 ;
 }
 
 tuple lighting ( material* mat , object* o , point_light* light , tuple* point , tuple* eye_dir , tuple* normal , int in_shadow )
@@ -302,5 +305,17 @@ tuple lighting ( material* mat , object* o , point_light* light , tuple* point ,
 
     tuple temp = add_tuples( &ambient , &diffuse ) ; // TODO: make a function for this
     return add_tuples( &temp , &specular ) ;
+}
+
+tuple reflected_color ( world* w , contact_calc* calc , int depth_limit )
+{
+    if ( depth_limit <= 0 )
+        return ( tuple ) { 0 , 0 , 0 , 0 } ;
+    // calculate the reflective color at this point by throwing rays originating at this point into the world
+    ray god_ray = get_ray( &calc->adjusted_p , &calc->reflectv ) ;
+    tuple color = color_at( w , &god_ray , 1 , depth_limit-1 ) ;
+
+    mult_scalar_tuple ( &color , calc->obj.mat.reflective ) ;
+    return color ;
 }
 
