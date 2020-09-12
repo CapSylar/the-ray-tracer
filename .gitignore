@@ -1,2 +1,4 @@
 /cmake-build-debug/
 /devlog.txt
+/tests.check
+/tests.c

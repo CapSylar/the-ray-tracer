@@ -40,15 +40,22 @@ void canvas_write ( tuple color , int x , int y )
 
 void canvas_ppm () // converts the canvas to ppm file format
 {
-    int len = 20 + canvas.row * canvas.col * 12 + 1; // 20 for header , 12 for each line and 1 for terminator
+    int len = 20 + canvas.row * canvas.col * 14 + 1; // 20 for header , 12 for each line and 1 for terminator
     char* ppm_str = malloc ( sizeof(char) * len ) ;
+    if ( !ppm_str )
+    {
+        fprintf(stderr , "error could not allocate memory\n") ;
+        return;
+    }
+
     int header_len = snprintf( ppm_str , 20 , "P3\n%d %d\n255\n" , canvas.row , canvas.col ); // header info
     char *running = ppm_str + header_len ;
     // save the pixels to the string, each on a separate line
+
     for ( int i = 0 ; i < canvas.col * canvas.row ; ++i )
     {
         tuple current = canvas.mem[i] ;
-        running += snprintf( running , 13 , "%d %d %d\n", (int)(current.x * 255) , (int)(current.y * 255) , (int)(current.z * 255) ) ;
+        running += snprintf( running , 14 , "%d %d %d\n", (int)(current.x * 255) , (int)(current.y * 255) , (int)(current.z * 255) ) ;
     }
 
     *running = 0 ;

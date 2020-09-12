@@ -9,6 +9,7 @@
 #include "trans_routines.h"
 #include "matrix_routines.h"
 #include "canvas.h"
+#include "linked_list.h"
 
 void init_world (world *new)
 {
@@ -77,7 +78,7 @@ void merge_destroy ( inter_collec *dest , inter_collec *inter )
     free ( inter->xs ) ;
 }
 
-void compute_contact ( ray* r , intersection* i , contact_calc* dest ) // computers contract information used for shading and such
+void compute_contact ( ray* r , intersection* i , contact_calc* dest, inter_collec* collec ) // computers contract information used for shading and such
 {
     dest->t = i->t;
     dest->obj = (i->obj);
@@ -96,8 +97,49 @@ void compute_contact ( ray* r , intersection* i , contact_calc* dest ) // comput
     dest->reflectv = reflect( &r->dir , &dest->normal ) ;
 
     tuple offset = dest->normal;
-    mult_scalar_tuple(&offset, EPS*200 ); // TODO: EPS*200 used is too big, there seem to be a problem
+    mult_scalar_tuple(&offset, EPS*200 ); // TODO: EPS*200 used is too big, there seems to be a problem
     dest->adjusted_p = add_tuples( &offset , &dest->p_contact );
+
+    // same for the inner_point except we subtract the offset
+
+    dest->inner_point = sub_tuples( &dest->p_contact , &offset ) ;
+
+    // compute n1 and n2 for refraction
+    linked_l list = {0} ;
+
+    for ( int j = 0 ; j < collec->count ; ++j )
+    {
+        if ( i->t == collec->xs[j].t ) // hit occurred here
+        {
+            if (is_empty(&list)) // entered the first object
+            {
+                dest->n1 = 1; // empty space
+            }
+            else
+            {
+                dest->n1 = list.end->i->obj.mat.refractive_index;
+            }
+        }
+
+        if ( list_contains( &list , &collec->xs[j].obj ) )
+        {
+            remove_inter( &list , &collec->xs[j] ) ;
+        }
+        else
+        {
+            add_inter( &list , &collec->xs[j] ) ;
+        }
+
+        if ( i->t == collec->xs[j].t )
+        {
+            if ( is_empty(&list))
+                dest->n2 = 1 ;
+            else
+                dest->n2 = list.end->i->obj.mat.refractive_index ;
+
+            break ;
+        }
+    }
 }
 tuple shade_hit( world* w , contact_calc* calc , int calc_shadows , int depth_limit )
 {
@@ -107,8 +149,17 @@ tuple shade_hit( world* w , contact_calc* calc , int calc_shadows , int depth_li
     tuple surface =  lighting( &calc->obj.mat , &calc->obj ,&w->light , &calc->adjusted_p , &calc->eye_v , &calc->normal , in_shadow ) ;
 
     tuple reflected = reflected_color( w , calc , depth_limit ) ;
+    tuple refracted = refracted_color( w , calc, depth_limit ) ;
 
-    return add_tuples( &surface , &reflected );
+    if ( calc->obj.mat.transparency > 0 && calc->obj.mat.reflective > 0 ) // use fresnel
+    {
+        float approx = schlick_approx(calc) ;
+        mult_scalar_tuple( &reflected , approx ) ;
+        mult_scalar_tuple( &refracted , 1 - approx ) ;
+    }
+
+    reflected = add_tuples( &surface , &reflected );
+    return add_tuples( &refracted , &reflected ) ;
 }
 
 tuple color_at ( world *w , ray *r , int calc_shadows , int depth_limit )
@@ -120,7 +171,7 @@ tuple color_at ( world *w , ray *r , int calc_shadows , int depth_limit )
     {
         // we have a hit, compute the parameters then shade
         contact_calc calculations ;
-        compute_contact( r , inter , &calculations ) ;
+        compute_contact( r , inter , &calculations , &interCollec ) ;
         destroy_coll( &interCollec ) ;
         return shade_hit( w , &calculations , calc_shadows , depth_limit ) ;
     }

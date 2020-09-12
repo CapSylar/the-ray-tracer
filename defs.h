@@ -56,7 +56,8 @@ typedef struct pattern
 
 typedef struct
 {
-    float ambient,diffuse,specular,shininess,reflective ;
+    float ambient,diffuse,specular,shininess,reflective;
+    float transparency,refractive_index ;
     tuple color ;
 
     int has_pattern ;
@@ -66,6 +67,7 @@ typedef struct
 
 typedef struct object
 {
+    int id ;
     int type;
     mat4 trans;
     material mat;
@@ -102,7 +104,9 @@ typedef struct
     tuple eye_v ;
     tuple normal ;
     tuple adjusted_p ; // point that has been adjusted to remove the problem of self intersection for shadows
+    tuple inner_point ; // slightly adjusted in the opp direction of the normal
     tuple reflectv ; // reflection vector from point
+    float n1,n2 ; // for refraction
 
 } contact_calc ;
 
@@ -123,7 +127,7 @@ typedef struct
 
 
 #define EPS 0.00001f // good enough for me :)
-#define float_cmp(a,b) (( fabs((a)-(b)) < EPS ))
+#define float_cmp(a,b) (( fabs((float)(a)-(float)(b)) < EPS ))
 #define PI 3.14159265359f
 
 #endif //RAY_TRACER_DEFS_H

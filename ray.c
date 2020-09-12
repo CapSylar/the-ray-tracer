@@ -10,6 +10,7 @@
 #include "patterns.h"
 #include "world_view.h"
 
+
 ray get_ray ( tuple* origin , tuple* direction )
 {
     ray ret ;
@@ -91,9 +92,20 @@ void intersect_plane ( ray *r , object s , inter_collec* dest  )
 object get_sphere ()
 {
     object sphere;
-    ident_mat4( sphere.trans ) ;
-    def_material(&sphere.mat) ;
-    sphere.type = SPHERE_OBJECT ;
+    ident_mat4(sphere.trans);
+    def_material(&sphere.mat);
+    sphere.type = SPHERE_OBJECT;
+    sphere.id = rand() ;
+
+    return sphere;
+}
+// just for the lolz
+object get_glass_sphere()
+{
+    object sphere = get_sphere() ;
+    sphere.mat.transparency = 1.0f ;
+    sphere.mat.refractive_index = 1.5f ;
+    sphere.id = rand() ;
 
     return sphere ;
 }
@@ -102,6 +114,7 @@ object get_plane ()
     object plane;
     ident_mat4( plane.trans ) ;
     def_material(&plane.mat) ;
+    plane.id = rand() ;
     plane.type = PLANE_OBJECT ;
 
     return plane ;
@@ -249,6 +262,8 @@ void def_material ( material *def )
     def->shininess = 200 ;
     def->has_pattern = 0 ;
     def->reflective = 0 ;
+    def->refractive_index = 1.0f ;
+    def->transparency = 0 ;
 }
 
 tuple lighting ( material* mat , object* o , point_light* light , tuple* point , tuple* eye_dir , tuple* normal , int in_shadow )
@@ -310,12 +325,66 @@ tuple lighting ( material* mat , object* o , point_light* light , tuple* point ,
 tuple reflected_color ( world* w , contact_calc* calc , int depth_limit )
 {
     if ( depth_limit <= 0 )
-        return ( tuple ) { 0 , 0 , 0 , 0 } ;
+        return ( tuple ) { 0 , 0 , 0 , 0 } ; // black
     // calculate the reflective color at this point by throwing rays originating at this point into the world
     ray god_ray = get_ray( &calc->adjusted_p , &calc->reflectv ) ;
     tuple color = color_at( w , &god_ray , 1 , depth_limit-1 ) ;
 
     mult_scalar_tuple ( &color , calc->obj.mat.reflective ) ;
     return color ;
+}
+
+tuple refracted_color ( world* w , contact_calc* calc , int depth_limit )
+{
+    if ( depth_limit <= 0 || float_cmp(calc->obj.mat.transparency,0) )
+        return ( tuple ) { 0 , 0 , 0, 0 } ; // black
+
+    // calculate the refracted ray direction
+
+    float n_ratio = calc->n1 / calc->n2 ;
+    float inc_cos = dot_tuples( &calc->normal , &calc->eye_v ) ;
+    float sin_sq = n_ratio * ( 1 - inc_cos*inc_cos ) ;
+
+    if ( sin_sq > 1 ) // not possible, total internal reflection occurred
+        return ( tuple ) { 0 , 0 , 0 , 0 } ;
+
+    float cos_t = sqrtf( 1 - sin_sq ) ;
+    tuple refracted_dir , temp1 ;
+    refracted_dir = calc->normal ;
+    mult_scalar_tuple( &refracted_dir , n_ratio * inc_cos - cos_t ) ;
+    temp1 = calc->eye_v ;
+    mult_scalar_tuple( &temp1 , n_ratio ) ;
+    refracted_dir = sub_tuples( &refracted_dir , &temp1 ) ;
+
+    ray god_ray = get_ray( &calc->inner_point , &refracted_dir ) ;
+    tuple color = color_at( w , &god_ray , 1 , depth_limit-1 ) ;
+    mult_scalar_tuple( &color , calc->obj.mat.transparency ) ;
+
+    return color ;
+}
+
+float schlick_approx ( contact_calc* calc )
+{
+    // returns 1 means total reflectance and 0 means all refractance
+
+    float cos_inc = dot_tuples( &calc->normal , &calc->eye_v ) ;
+
+    // check for total internal reflection
+    if ( calc->n1 > calc->n2 )
+    {
+        float ratio = calc->n1 / calc->n2 ;
+        float sin_sqr = ratio*ratio * ( 1 - cos_inc*cos_inc ) ;
+
+        if ( sin_sqr > 1 )
+            return 1;
+
+        cos_inc = sqrtf( 1 - sin_sqr ) ;
+    }
+
+    // christopher schlick approximation
+    float r0 = (calc->n1 - calc->n2)/(calc->n1 + calc->n2) ;
+    r0 = r0*r0 ;
+
+    return r0 + ( 1 - r0 ) * powf( (1 - cos_inc) , 5 ) ;
 }
 

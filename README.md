@@ -42,3 +42,8 @@ added patterns and the option to nest them
 added reflections 
 
 <img src="screenshots/moc_11.png" /> 
+
+### end of chapter 11
+added reflections and refractions
+
+<img src="screenshots/eoc11.png" />
