@@ -8,6 +8,7 @@ typedef float mat2[4] ;
 
 #define SPHERE_OBJECT 0
 #define PLANE_OBJECT 1
+#define CUBE_OBJECT 2
 
 enum pattern_type { PATTERN_CHECKER , PATTERN_GRADIENT , PATTERN_STRIPES , PATTERN_RING };
 

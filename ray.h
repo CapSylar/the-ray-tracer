@@ -11,6 +11,7 @@ tuple local_normal ( object* s , tuple* local_p ) ;
 tuple ray_pos ( ray* x , float t ) ;
 object get_sphere () ;
 object get_plane () ;
+object get_cube () ;
 object get_glass_sphere() ;
 inter_collec intersections( int num , ... ) ;
 void destroy_coll ( inter_collec* col ) ;
@@ -27,5 +28,8 @@ int comp_intersections (const void* elem1 , const void* elem2 ) ;
 tuple reflected_color ( world* w , contact_calc* calc , int depth_limit ) ;
 tuple refracted_color ( world* w , contact_calc* calc , int depth_limit ) ;
 float schlick_approx ( contact_calc* calc ) ;
+void intersect_axis( float axis_origin , float axis_direction , float *tmin , float *tmax ) ;
+void intersect_cube ( ray* god_ray , object cube , inter_collec *collec ) ;
+tuple cube_local_normal ( object *s , tuple* local_p  ) ;
 
 #endif //RAY_TRACER_RAY_H

@@ -44,7 +44,10 @@ void intersect ( ray* r , object s , inter_collec* dest )
             break ;
         case PLANE_OBJECT:
             intersect_plane ( &new_r , s , dest ) ;
-            break ;
+            break;
+        case CUBE_OBJECT:
+            intersect_cube( &new_r , s , dest ) ;
+            break;
         default:
             fprintf( stderr , "shape type not supported\n" ) ;
             break ;
@@ -118,6 +121,17 @@ object get_plane ()
     plane.type = PLANE_OBJECT ;
 
     return plane ;
+}
+
+object get_cube ()
+{
+    object cube;
+    ident_mat4( cube.trans ) ;
+    def_material( &cube.mat ) ;
+    cube.id = rand();
+    cube.type = CUBE_OBJECT ;
+
+    return cube;
 }
 
 int comp_intersections (const void* elem1 , const void* elem2 )
@@ -221,6 +235,9 @@ tuple local_normal ( object* s , tuple* local_p )
         case PLANE_OBJECT:
             normal = ( tuple ) { 0 , 1 , 0 , 0 } ; // plane is on XZ
             break ;
+        case CUBE_OBJECT:
+            normal = cube_local_normal( s , local_p ) ;
+            break;
         default:
             fprintf( stderr , "error, shape not supported") ;
             break ;
@@ -386,5 +403,79 @@ float schlick_approx ( contact_calc* calc )
     r0 = r0*r0 ;
 
     return r0 + ( 1 - r0 ) * powf( (1 - cos_inc) , 5 ) ;
+}
+
+// cube intersection logic
+
+void intersect_axis( float axis_origin , float axis_direction , float *tmin , float *tmax )
+{
+    // return type indicates if intersections occured
+
+    float plane1_d = -1 -axis_origin ;
+    float plane2_d = 1 - axis_origin ;
+
+    if ( fabs(axis_origin) >= 0 )
+    {
+        *tmin = plane1_d / axis_direction ;
+        *tmax = plane2_d / axis_direction ;
+
+        if ( *tmin > *tmax )
+        {
+            float temp = *tmin ;
+            *tmin = *tmax ;
+            *tmax = temp ;
+        }
+    }
+    else
+    {
+        *tmin = INFINITY; // pray for availability
+        *tmax = INFINITY;
+    }
+
+}
+
+void intersect_cube ( ray* god_ray , object cube , inter_collec *collec )
+{
+    // the cube is really just a collection of 6 infinite planes
+
+    float xmin,xmax,ymin,ymax,zmin,zmax ;
+    intersect_axis( god_ray->org.x , god_ray->dir.x , &xmin , &xmax ) ;
+    intersect_axis( god_ray->org.y , god_ray->dir.y , &ymin , &ymax ) ;
+    intersect_axis( god_ray->org.z , god_ray->dir.z , &zmin , &zmax ) ;
+
+    // get maxs of minimums and minimums of maxs, reuse xmin and xmax as tmin and tmax :)
+    xmin = xmin > ymin ? ( xmin > zmin ? xmin : zmin  ) : (ymin > zmin ? ymin : zmin) ;
+    xmax = xmax < ymax ? ( xmax < zmax ? xmax : zmax ) : ( ymax < zmax ? ymax : zmax ) ;
+
+    if ( xmin > xmax ) // ray missed the cube
+    {
+        collec->count = 0 ;
+    }
+    else
+    {
+        collec->count = 2 ;
+        collec->xs = malloc ( sizeof(intersection) * 2 ) ;
+        collec->xs[0] = ( intersection ) { xmin , cube } ;
+        collec->xs[1] = ( intersection ) { xmax , cube } ;
+    }
+}
+
+tuple cube_local_normal ( object *s , tuple* local_p  )
+{
+    // the normal for an axis alligned bounding box is in the direction of the biggest component (x,y,z)
+    // can't compute to 1 due to roundings, potentially dangerous
+    tuple ret = {0} ;
+
+    float absx = fabsf(local_p->x) , absy = fabsf(local_p->y) ,absz = fabsf( local_p->z );
+    float max = absx > absy ? absx > absz ? absx : absz : absy > absz ? absy : absz ;
+
+    if ( absx == max ) // normal is in the x direction
+        ret.x = local_p->x ;
+    else if ( max == absy )
+        ret.y = local_p->y ;
+    else
+        ret.z = local_p->z ;
+
+    return ret;
 }
 

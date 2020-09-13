@@ -225,3 +225,181 @@ struct canvas
     tuple expected = get_color( 0.933867f , 0.69639f , 0.692379f ) ;
 
     fail_unless ( compare_tuple ( &expected , &color ) , " failed to approximate fresnel effect") ;
+
+#test cube_intersection
+
+    object cube = get_cube() ;
+    tuple point = get_point (5,0.5,0) ;
+    tuple direction = get_vector(-1,0,0) ;
+    ray god_ray = get_ray ( &point , &direction ) ;
+
+    inter_collec collec = {0} ;
+
+    //case 1
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
+    fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
+    fail_unless ( float_cmp ( 6 , collec.xs[1].t ) , "failed to intersect the cube correcly " ) ;
+
+    destroy_coll( &collec ) ;
+
+    //case 2
+
+    point = get_point (-5,0.5,0) ;
+    direction = get_vector(1,0,0) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
+    fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
+    fail_unless ( float_cmp ( 6 , collec.xs[1].t ) , "failed to intersect the cube correcly " ) ;
+
+    //case 3
+
+    point = get_point (0.5,5,0) ;
+    direction = get_vector(0,-1,0) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
+    fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
+    fail_unless ( float_cmp ( 6 , collec.xs[1].t ) , "failed to intersect the cube correcly " ) ;
+
+    //case 4
+
+    point = get_point (0.5,-5,0) ;
+    direction = get_vector(0,1,0) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
+    fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
+    fail_unless ( float_cmp ( 6 , collec.xs[1].t ) , "failed to intersect the cube correcly " ) ;
+
+    //case 5
+
+    point = get_point (0.5,0,5) ;
+    direction = get_vector(0,0,-1) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
+    fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
+    fail_unless ( float_cmp ( 6 , collec.xs[1].t ) , "failed to intersect the cube correcly " ) ;
+
+    //case 6
+
+    point = get_point (0.5,0,-5) ;
+    direction = get_vector(0,0,1) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
+    fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
+    fail_unless ( float_cmp ( 6 , collec.xs[1].t ) , "failed to intersect the cube correcly " ) ;
+
+    //case 7
+
+    point = get_point (0.5,0,5) ;
+    direction = get_vector(0,0,-1) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
+    fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
+    fail_unless ( float_cmp ( 6 , collec.xs[1].t ) , "failed to intersect the cube correcly " ) ;
+
+    // misses the cube test
+
+    point = get_point (-2,0,0) ;
+    direction = get_vector(0.2673f,0.5345f,0.8018f) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
+
+    point = get_point (0,-2,0) ;
+    direction = get_vector(0.8018f , 0.2673f , 0.5345f ) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
+
+    point = get_point (0,0,-2) ;
+    direction = get_vector(0.5345f , 0.8018f , 0.2673f ) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
+
+    point = get_point (2,0,2) ;
+    direction = get_vector(0,0,-1) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
+
+    point = get_point (0,2,2) ;
+    direction = get_vector(0,-1,0) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
+
+    point = get_point (2,2,0) ;
+    direction = get_vector(-1,0,0) ;
+    god_ray = get_ray ( &point , &direction ) ;
+
+    intersect_cube( &god_ray , cube , &collec ) ;
+
+    fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
+
+    // test normal calculations for the cubes
+
+    point = get_point(1,0.5f,-0.8f) ;
+    tuple expected = get_vector(1,0,0);
+
+    tuple got = local_normal( &cube , &point ) ;
+    fail_unless( compare_tuple( &expected , &got ) , "failed to calculate correct normal for cube") ;
+
+    point = get_point(-1,-0.2f,0.9f) ;
+    expected = get_vector(-1,0,0);
+
+    got = local_normal ( &cube , &point ) ;
+    fail_unless ( compare_tuple ( &expected , &got ) , "failed to calculate correct normal for cube" ) ;
+
+    point = get_point(-0.4f,1,-0.1f) ;
+    expected = get_vector(0,1,0);
+
+    got = local_normal ( &cube , &point ) ;
+    fail_unless ( compare_tuple ( &expected , &got ) , "failed to calculate correct normal for cube" ) ;
+
+    point = get_point(0.4f,0.4f,-1) ;
+    expected = get_vector(0,0,-1);
+
+    got = local_normal ( &cube , &point ) ;
+    fail_unless ( compare_tuple ( &expected , &got ) , "failed to calculate correct normal for cube" ) ;
+
+    point = get_point(1,1,1) ;
+    expected = get_vector(1,0,0);
+
+    got = local_normal ( &cube , &point ) ;
+    fail_unless ( compare_tuple ( &expected , &got ) , "failed to calculate correct normal for cube" ) ;
+
+    point = get_point(-1,-1,-1) ;
+    expected = get_vector(-1,0,0);
+
+    got = local_normal ( &cube , &point ) ;
+    fail_unless ( compare_tuple ( &expected , &got ) , "failed to calculate correct normal for cube" ) ;
