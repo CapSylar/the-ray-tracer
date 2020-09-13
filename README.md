@@ -47,3 +47,8 @@ added reflections
 added reflections and refractions
 
 <img src="screenshots/eoc11.png" />
+
+### end of chapter 12
+added support for cubes
+
+<img src="screenshots/eoc12.png"/>
