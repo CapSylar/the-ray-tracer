@@ -9,6 +9,8 @@ typedef float mat2[4] ;
 #define SPHERE_OBJECT 0
 #define PLANE_OBJECT 1
 #define CUBE_OBJECT 2
+#define CYLINDER_OBJECT 3
+#define CONE_OBJECT 4
 
 enum pattern_type { PATTERN_CHECKER , PATTERN_GRADIENT , PATTERN_STRIPES , PATTERN_RING };
 
@@ -72,6 +74,10 @@ typedef struct object
     int type;
     mat4 trans;
     material mat;
+
+    // ugly booger
+    float min,max ; // for cylinder, should be removed from here
+    int closed; // if the caps are present or not
 } object ;
 
 typedef struct

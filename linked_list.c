@@ -69,3 +69,13 @@ void print_list ( linked_l* list )
     for ( node* i = list->start ; i ; i=i->next )
         printf("node: %g\n", i->i->t ) ;
 }
+
+void free_list ( linked_l* list )
+{
+    node* next = 0 ;
+    for ( node *i = list->start ; i ; i = next )
+    {
+        next = i->next;
+        free(i);
+    }
+}

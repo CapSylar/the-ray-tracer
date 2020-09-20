@@ -20,6 +20,7 @@ void add_inter ( linked_l* list , intersection *inter ) ;
 void print_list ( linked_l* list ) ;
 int is_empty ( linked_l* list ) ;
 int list_contains ( linked_l* list , object *o ) ;
+void free_list ( linked_l* list );
 
 
 #endif //RAY_TRACER_LINKED_LIST_H

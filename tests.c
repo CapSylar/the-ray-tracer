@@ -423,6 +423,193 @@ START_TEST(cube_intersection)
 
     got = local_normal ( &cube , &point ) ;
     fail_unless ( compare_tuple ( &expected , &got ) , "failed to calculate correct normal for cube" ) ;
+
+}
+END_TEST
+
+START_TEST(cylinder_intersection)
+{
+#line 408
+    object cyly = get_cylinder() ;
+    tuple point = get_point( 1,0,0 ) ;
+    tuple direction = get_vector( 0,1,0 ) ;
+
+    ray god_ray = get_ray ( &point , &direction ) ;
+    inter_collec collec = {0} ;
+    intersect_cylinder( &god_ray , cyly , &collec );
+
+    fail_unless ( collec.count == 0 , "failed to correctly intersect the cylinder") ;
+
+    point = get_point(0,0,0);
+    direction = get_vector (0,1,0) ;
+    god_ray = get_ray ( &point , &direction );
+    destroy_coll( &collec ) ;
+
+    intersect_cylinder( &god_ray , cyly , &collec ) ;
+
+    fail_unless ( collec.count == 0 , "failed to correctly intersect the cylinder" ) ;
+
+    point = get_point(0,0,-5);
+    direction = get_vector(1,1,1);
+    god_ray = get_ray( &point , &direction );
+
+    intersect_cylinder ( &god_ray , cyly , &collec );
+
+    fail_unless ( collec.count == 0 , "failed to correctly intersect the cylinder" ) ;
+    destroy_coll ( &collec ) ;
+
+    // test ray cylinder hits
+
+    point = get_point( 1,0,-5 ) ;
+    direction = get_vector( 0,0,1 );
+    god_ray = get_ray( &point , &direction );
+
+    intersect_cylinder ( &god_ray , cyly , &collec );
+    fail_unless( collec.count == 2 , "failed to correctly intersect the cylinder") ;
+    fail_unless ( float_cmp(collec.xs[0].t, 5) , "failed to correctly intersect the cylinder" ) ;
+    fail_unless ( float_cmp(collec.xs[1].t , 5), "failed to correcly intersect the cylinder" ) ;
+
+     point = get_point( 0.5f , 0 , -5 ) ;
+     direction = get_vector( 0.1f , 1 , 1 );
+     god_ray = get_ray( &point , &direction );
+
+     intersect_cylinder ( &god_ray , cyly , &collec );
+     fail_unless( collec.count == 2 , "failed to correctly intersect the cylinder") ;
+     fail_unless ( float_cmp( collec.xs[0].t, 6.80800581f ) , "failed to correctly intersect the cylinder" ) ;
+     fail_unless ( float_cmp( collec.xs[1].t , 7.08869839f ), "failed to correcly intersect the cylinder" ) ;
+
+    // test truncating the cylinders
+
+    cyly.min = 1 ;
+    cyly.max = 2;
+
+    point = get_point( 0,1.5f,0 );
+    direction = get_vector ( 0.1f,1,0 );
+    god_ray = get_ray( &point , &direction );
+    intersect_cylinder ( &god_ray , cyly , &collec );
+
+    fail_unless ( collec.count == 0 , "failed to correctly intersect capped cylinder" ) ;
+
+    point = get_point( 0,3,-5 );
+    direction = get_vector ( 0,0,1 );
+    god_ray = get_ray( &point , &direction );
+    intersect_cylinder ( &god_ray , cyly , &collec );
+
+    fail_unless ( collec.count == 0 , "failed to correcly intersect capped cylinder" ) ;
+
+    point = get_point( 0,0,-5 );
+    direction = get_vector ( 0,0,1 );
+    god_ray = get_ray( &point , &direction );
+    intersect_cylinder ( &god_ray , cyly , &collec );
+
+    fail_unless ( collec.count == 0 , "failed to correcly intersect capped cylinder" ) ;
+
+    point = get_point( 0,2,-5 );
+    direction = get_vector ( 0,0,1 );
+    god_ray = get_ray( &point , &direction );
+    intersect_cylinder ( &god_ray , cyly , &collec );
+
+    fail_unless ( collec.count == 0 , "failed to correcly intersect capped cylinder" ) ;
+
+    point = get_point( 0,1,-5 );
+    direction = get_vector ( 0,0,1 );
+    god_ray = get_ray( &point , &direction );
+    intersect_cylinder ( &god_ray , cyly , &collec );
+
+    fail_unless ( collec.count == 0 , "failed to correcly intersect capped cylinder" ) ;
+
+    point = get_point( 0,1.5f,-2 );
+    direction = get_vector ( 0,0,1 );
+    god_ray = get_ray( &point , &direction );
+    intersect_cylinder ( &god_ray , cyly , &collec );
+
+    fail_unless ( collec.count == 2 , "failed to correcly intersect capped cylinder" ) ;
+
+    // test if the caps are being hit correctly
+
+    cyly.closed = 1 ;
+
+    point = get_point( 0,3,0 );
+    direction = get_vector( 0,-1,0 );
+
+    god_ray = get_ray( &point, &direction );
+    intersect_cylinder( &god_ray , cyly , &collec );
+
+    fail_unless ( collec.count == 2 , "failed to correctly intersect capped cylinder" ) ;
+
+    point = get_point(0,3,-2);
+    direction = get_vector( 0,-1,2 );
+
+    god_ray = get_ray( &point , &direction ) ;
+    intersect_cylinder ( &god_ray , cyly , &collec ) ;
+
+    fail_unless ( collec.count == 2 , "failed to correctly intersect capped cylinder" );
+
+    point = get_point(0,4,-2);
+    direction = get_vector( 0,-1,1 );
+
+    god_ray = get_ray( &point , &direction ) ;
+    intersect_cylinder ( &god_ray , cyly , &collec ) ;
+
+    //fail_unless ( collec.count == 2 , "failed to correctly intersect capped cylinder" );
+
+    point = get_point(0,0,-2);
+    direction = get_vector( 0,1,2 );
+
+    god_ray = get_ray( &point , &direction ) ;
+    intersect_cylinder ( &god_ray , cyly , &collec ) ;
+
+    fail_unless ( collec.count == 2 , "failed to correctly intersect capped cylinder" );
+
+    point = get_point(0,-1,-2);
+    direction = get_vector( 0,1,1 );
+
+    god_ray = get_ray( &point , &direction ) ;
+    intersect_cylinder ( &god_ray , cyly , &collec ) ;
+
+    //fail_unless ( collec.count == 2 , "failed to correctly intersect capped cylinder" );
+
+    // test the normal for the new capped cylinder
+
+    cyly = get_cylinder() ;
+    cyly.closed = 1;
+    cyly.min = 1 ;
+    cyly.max = 2;
+
+    point = get_point( 0,1,0 );
+    direction = get_vector( 0,-1,0 );
+    tuple res ;
+
+    res = local_normal ( &cyly , &point );
+    fail_unless( compare_tuple( &direction , &res ) , "failed to generate correct normal for capped cylinder" );
+
+    point = get_point( 0.5f , 1 ,0 );
+    res = local_normal ( &cyly , &point ) ;
+    fail_unless ( compare_tuple ( &direction , &res ) , "failed to generate correct normal for capped cylinder" ) ;
+
+    point = get_point( 0,1,0.5f );
+    direction = get_vector(0,-1,0);
+    res = local_normal (&cyly , &point );
+
+    fail_unless ( compare_tuple ( &direction , &res ) , "failed to generate correct normal for capped cylinder" ) ;
+
+    point = get_point (0,2,0) ;
+    direction = get_vector(0,1,0);
+    res = local_normal(&cyly , &point );
+
+    fail_unless ( compare_tuple(&direction , &res ) , "failed to generate correct normal for capped cylinder" ) ;
+
+    point = get_point( 0.5f, 2, 0);
+    direction = get_vector(0,1,0);
+    res = local_normal (&cyly , &point );
+
+    fail_unless ( compare_tuple( &direction , &res ) , "failed to generate correct normal for capped cylinder" ) ;
+
+    point = get_point( 0, 2, 0.5f );
+    direction = get_vector(0,1,0);
+    res = local_normal (&cyly , &point );
+
+    fail_unless ( compare_tuple( &direction , &res ) , "failed to generate correct normal for capped cylinder" ) ;
 }
 END_TEST
 
@@ -437,6 +624,7 @@ int main(void)
     tcase_add_test(tc1_1, transparency_refraction);
     tcase_add_test(tc1_1, fresnel_effect);
     tcase_add_test(tc1_1, cube_intersection);
+    tcase_add_test(tc1_1, cylinder_intersection);
 
     srunner_run_all(sr, CK_ENV);
     nf = srunner_ntests_failed(sr);

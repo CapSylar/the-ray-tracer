@@ -12,6 +12,8 @@ tuple ray_pos ( ray* x , float t ) ;
 object get_sphere () ;
 object get_plane () ;
 object get_cube () ;
+object get_cylinder() ;
+object get_cone();
 object get_glass_sphere() ;
 inter_collec intersections( int num , ... ) ;
 void destroy_coll ( inter_collec* col ) ;
@@ -31,5 +33,9 @@ float schlick_approx ( contact_calc* calc ) ;
 void intersect_axis( float axis_origin , float axis_direction , float *tmin , float *tmax ) ;
 void intersect_cube ( ray* god_ray , object cube , inter_collec *collec ) ;
 tuple cube_local_normal ( object *s , tuple* local_p  ) ;
+void intersect_cylinder ( ray* r , object s , inter_collec* dest ) ;
+int check_cyl_caps(ray *r , float t) ;
+tuple cylinder_local_normal ( object *s , tuple *local_p ) ;
+void intersect_cyl_caps( ray* r , object cylinder , inter_collec* collec ) ;
 
 #endif //RAY_TRACER_RAY_H

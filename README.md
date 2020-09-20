@@ -8,8 +8,11 @@ then `make`
 
 ## TODO
 - clean the project file structure
-- optimizations
-- clean API
+- clean API 
+- optimizations:
+    - cube-ray intersection
+    - objects are copied around too much
+
 
 ## Progress timeline 
 
@@ -38,7 +41,7 @@ added patterns and the option to nest them
 
 <img src="screenshots/eoc_10.png" />
 
-### relfections
+### reflections
 added reflections 
 
 <img src="screenshots/moc_11.png" /> 
@@ -52,3 +55,7 @@ added reflections and refractions
 added support for cubes
 
 <img src="screenshots/eoc12.png"/>
+
+### cylinders
+
+<img src="screenshots/eoc13_1.png"/>

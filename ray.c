@@ -17,6 +17,8 @@ ray get_ray ( tuple* origin , tuple* direction )
     ret.dir = *direction ;
     ret.org = *origin ;
 
+    normalize_tuple(&ret.dir);
+
     return ret;
 }
 
@@ -47,6 +49,9 @@ void intersect ( ray* r , object s , inter_collec* dest )
             break;
         case CUBE_OBJECT:
             intersect_cube( &new_r , s , dest ) ;
+            break;
+        case CYLINDER_OBJECT:
+            intersect_cylinder( &new_r , s , dest ) ;
             break;
         default:
             fprintf( stderr , "shape type not supported\n" ) ;
@@ -79,6 +84,64 @@ void intersect_sphere ( ray *r , object s , inter_collec* dest )
         dest -> xs[1].obj = s ;
     }
 }
+
+void intersect_cylinder ( ray* r , object s , inter_collec* dest )
+{
+    // just a circle and ray intersection
+    dest->count = 0;
+    dest->xs = malloc(sizeof(intersection) * 2); // maximum we will need
+
+    float a = r->dir.x*r->dir.x + r->dir.z*r->dir.z ;
+
+    if ( !float_cmp(a , 0 )) // quick out
+    {
+        float b = 2 * r->org.x * r->dir.x + 2 * r->org.z * r->dir.z;
+        float c = r->org.x * r->org.x + r->org.z * r->org.z - 1;
+
+        float d = b * b - 4 * a * c;
+
+        if (d < 0)
+            return;
+
+        float inter1 = (-b - sqrtf(d)) / (2 * a);
+        float inter2 = (-b + sqrtf(d)) / (2 * a);
+
+        if (inter1 > inter2) // swap to keep the list sorted
+        {
+            float temp = inter1;
+            inter1 = inter2;
+            inter2 = temp;
+        }
+
+        // check is we exceeded the limits
+        a = r->org.y + r->dir.y * inter1;
+
+        if (a < s.max && a > s.min) // gets rendered
+        {
+            dest->xs[0] = (intersection) {inter1, s};
+            dest->count++;
+        }
+
+        a = r->org.y + r->dir.y * inter2;
+        if (a < s.max && a > s.min) // gets rendered
+        {
+            dest->xs[dest->count] = (intersection) {inter2, s};
+            dest->count++;
+        }
+    }
+
+    intersect_cyl_caps( r , s , dest ) ;
+}
+
+void intersect_cone( ray* r , object s , inter_collec* dest )
+{
+    dest->count = 0;
+
+    float a = r->dir.x*r->dir.x - r->dir.y*r->dir.y + r->dir.z*r->dir.z ;
+    float b = 2*r->org.x*r->dir.x - 2*r->org.y*r->dir.y + 2*r->org.z*r->dir.z ;
+    float c = r->org.x*r->org.x - r->org.y*r->org.y + r->org.z*r->org.z ;
+}
+
 void intersect_plane ( ray *r , object s , inter_collec* dest  )
 {
     if ( fabsf(r->dir.y) < EPS ) // will *never* intersect the plane
@@ -134,6 +197,36 @@ object get_cube ()
     return cube;
 }
 
+object get_cylinder()
+{
+    object cylinder;
+    ident_mat4(cylinder.trans) ;
+    def_material( &cylinder.mat ) ;
+    cylinder.id = rand() ;
+    cylinder.type = CYLINDER_OBJECT ;
+
+    cylinder.min = -INFINITY;
+    cylinder.max = INFINITY;
+    cylinder.closed = 0 ;
+
+    return cylinder;
+}
+
+object get_cone()
+{
+    object cone;
+    ident_mat4(cone.trans);
+    def_material(&cone.mat);
+    cone.id = rand() ;
+    cone.type = CONE_OBJECT;
+
+    cone.min = -INFINITY;
+    cone.max = INFINITY;
+    cone.closed = 0;
+
+    return cone;
+}
+
 int comp_intersections (const void* elem1 , const void* elem2 )
 {
     intersection i1 = *((intersection *) elem1) ;
@@ -170,6 +263,7 @@ int comp_intersections (const void* elem1 , const void* elem2 )
 
 void destroy_coll ( inter_collec* col )
 {
+    col->count = 0 ;
     if ( col->xs )
         free(col->xs) ;
 }
@@ -238,12 +332,31 @@ tuple local_normal ( object* s , tuple* local_p )
         case CUBE_OBJECT:
             normal = cube_local_normal( s , local_p ) ;
             break;
+        case CYLINDER_OBJECT:
+            normal = cylinder_local_normal ( s , local_p ) ;
+            break ;
         default:
             fprintf( stderr , "error, shape not supported") ;
             break ;
     }
 
     return normal ;
+}
+tuple cylinder_local_normal ( object *s , tuple *local_p )
+{
+    float d = local_p->x*local_p->x + local_p->z*local_p->z ;
+    tuple ret;
+
+    // check if this point is on the caps
+    if ( d < 1 && local_p->y >= (s->max - EPS) ) // on the upper cap
+        ret = get_vector(0,1,0);
+    else if ( d < 1 && local_p->y <= (s->min + EPS) ) // on the lower cap
+        ret = get_vector( 0,-1,0) ;
+    else
+        ret = get_vector( local_p->x , 0 , local_p->z ) ;
+
+    return ret;
+
 }
 tuple sphere_local_normal ( object *s , tuple* local_p  )
 { // just returns the normal vector in the local system
@@ -478,4 +591,34 @@ tuple cube_local_normal ( object *s , tuple* local_p  )
 
     return ret;
 }
+
+int check_cyl_caps(ray *r , float t)
+{
+    // check if the ray is in the caps which is a circle in the XZ plane of radius 1
+    float x = r->dir.x * t + r->org.x ;
+    float z = r->dir.z * t + r->org.z ;
+
+    return ( x*x + z*z ) <= 1 ;
+}
+
+void intersect_cyl_caps( ray* r , object cylinder , inter_collec* collec )
+{
+    if ( !cylinder.closed || float_cmp(r->dir.y,0) )
+        return;
+
+    // check intersection with the bottom cap
+    float tb = (cylinder.min - r->org.y) / r->dir.y ;
+    if ( check_cyl_caps(r,tb) )
+        collec->xs[collec->count++] = ( intersection ){ tb , cylinder } ;
+
+    // check intersection with the upper cap
+    float tu = (cylinder.max - r->org.y) / r->dir.y ;
+    if ( check_cyl_caps(r,tu))
+        collec->xs[collec->count++] = ( intersection ) { tu , cylinder } ;
+
+}
+
+
+
+
 

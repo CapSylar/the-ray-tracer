@@ -15,6 +15,7 @@
 int main()
 {
     srand( time(NULL) ) ;
+
     tuple to , from ;
     camera cs ;
     world hello ;
@@ -25,10 +26,10 @@ int main()
     init_world( &hello ) ;
     hello.light.position = get_point(-10,50,-20) ;
 
-    translate(1.5f , 1 , -1 , trans1 ) ;
+    translate(-2 , 1 , -8 , trans1 ) ;
     scale( 1,1,1 , trans2 ) ;
     multiply_mat4( trans1 , trans2 , hello.objects[1].trans ) ;
-    hello.objects[1].mat.color = get_color( 0.8f , 0.2f , 0.6f ) ;
+    hello.objects[1].mat.color = get_color( 0.4f , 0.1f , 0.3f ) ;
     hello.objects[1].mat.specular = 1 ;
     color1 = get_color( 1 , 1  ,1 ) ;
     color2 = get_color( 0 , 0 , 0 ) ;
@@ -159,6 +160,20 @@ int main()
     cube4.mat.specular = 3;
     add_obj_world( &hello , &cube4 ) ;
 
+    // cylinder
+    mat4 trans5;
+    object cylo = get_cylinder();
+    scale( 1 , 1 , 1 , trans1 ) ;
+    translate( 0 , 0 , -4 , trans2 ) ;
+    multiply_mat4( trans2 , trans1 , cylo.trans ) ;
+    cylo.mat.color = get_color(0,0.2f,0) ;
+    cylo.mat.reflective = 1 ;
+
+    cylo.closed = 1 ;
+    cylo.min = 0;
+    cylo.max = 2.5f ;
+    add_obj_world( &hello , &cylo ) ;
+
     // floor
 
     object floor = get_plane() ;
@@ -193,8 +208,6 @@ int main()
     pattern new_pattern = get_pattern( PATTERN_GRADIENT , 0 , 0 , &color1 , &color2 ) ;
     last.mat.current_pattern.isNested1 = 1 ;
     last.mat.current_pattern.pattern1 = &new_pattern ;
-
-
 
     struct timeval start , stop ;
     gettimeofday( &start , 0 ) ;

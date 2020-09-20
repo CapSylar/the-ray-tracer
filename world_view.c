@@ -64,7 +64,11 @@ void merge_destroy ( inter_collec *dest , inter_collec *inter )
 {
     // merge the intersection collection to dest and then destroy it
     if ( !inter->count )
-        return ;
+    {
+        if ( inter->xs ) // sometimes we allocate even though the size may be zero
+            free(inter->xs);
+        return;
+    }
 
     dest-> xs = realloc( dest->xs , (dest->count + inter->count) * sizeof( intersection )) ;
     if ( dest->xs == 0 )
@@ -140,6 +144,9 @@ void compute_contact ( ray* r , intersection* i , contact_calc* dest, inter_coll
             break ;
         }
     }
+
+    free_list( &list ) ;
+
 }
 tuple shade_hit( world* w , contact_calc* calc , int calc_shadows , int depth_limit )
 {
