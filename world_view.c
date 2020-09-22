@@ -10,6 +10,7 @@
 #include "matrix_routines.h"
 #include "canvas.h"
 #include "linked_list.h"
+#include "interface.h"
 
 void init_world (world *new)
 {
@@ -282,13 +283,18 @@ void render( camera *c , world *w )
 {
     init_canvas(c->h_size,c->v_size) ;
     for ( int y = 0 ; y < c->v_size ; ++y )
-        for ( int x = 0; x < c->h_size ; ++x )
+    {
+        for (int x = 0; x < c->h_size; ++x)
         {
-            ray god_ray ;
-            ray_for_pixel( c , x , y , &god_ray );
-            tuple color = color_at( w , &god_ray , 1 , 3 ) ;
-            canvas_write( color , x , y ) ;
+            ray god_ray;
+            ray_for_pixel(c, x, y, &god_ray);
+            tuple color = color_at(w, &god_ray, 1, 3);
+            canvas_write(color, x, y);
+            interface_write(color, x, y);
         }
+
+        update_interface();
+    }
 }
 
 int is_shadowed ( world* w , tuple *point)

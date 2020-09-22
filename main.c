@@ -8,9 +8,12 @@
 #include <sys/time.h>
 #include <stdio.h>
 #include "patterns.h"
-#include "linked_list.h"
 #include <stdlib.h>
 #include <time.h>
+#include "interface.h"
+
+#define RESOLUTION_WIDTH 1000
+#define RESOLUTION_HEIGHT 1000
 
 int main()
 {
@@ -44,7 +47,7 @@ int main()
     hello.objects[0].mat.refractive_index = 1.5f ;
     hello.objects[0].mat.transparency = 1 ;
 
-    init_camera ( 3000 , 3000 , PI/2 , &cs ) ;
+    init_camera ( RESOLUTION_HEIGHT , RESOLUTION_WIDTH , PI/2 , &cs ) ;
 
     from = get_point (-4,3,-10);
     to = get_point (3,1,0);
@@ -209,10 +212,33 @@ int main()
     last.mat.current_pattern.isNested1 = 1 ;
     last.mat.current_pattern.pattern1 = &new_pattern ;
 
+    if ( init_interface( RESOLUTION_WIDTH , RESOLUTION_HEIGHT ) == EXIT_FAILURE )
+        return EXIT_FAILURE;
+
     struct timeval start , stop ;
     gettimeofday( &start , 0 ) ;
 
-    render( &cs , &hello ) ;
+    //render( &cs , &hello ) ;
+
+    init_canvas(cs.h_size,cs.v_size) ;
+
+    for ( int y = 0 ; y < cs.v_size ; ++y )
+    {
+        if ( poll_inputs_exit() )
+            break ;
+
+        for (int x = 0; x < cs.h_size; ++x)
+        {
+            ray god_ray;
+            ray_for_pixel(&cs, x, y, &god_ray);
+            tuple color = color_at( &hello , &god_ray, 1, 3);
+            canvas_write(color, x, y);
+            interface_write(color, x, y);
+        }
+
+        update_interface();
+    }
+
 
     gettimeofday( &stop , 0 ) ;
 
@@ -221,6 +247,8 @@ int main()
     canvas_ppm() ;
 
     printf("done in %lu seconds ", (stop.tv_sec - start.tv_sec)  );
+
+    close_interface() ; // clean up and close
 
     return 0;
 }
