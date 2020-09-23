@@ -33,7 +33,7 @@ void intersect ( ray* r , object s , inter_collec* dest )
 {
     // take the matrix of the get_sphere , invert it and then transform the ray using it
     mat4 inver ;
-    inverse_mat4( s.trans , inver ) ;
+    gluInvertMatrix( s.trans , inver ) ;
     ray new_r = transform_ray( r , inver ) ;
     *dest = ( inter_collec ){0} ; // for sanity
 
@@ -304,7 +304,7 @@ tuple normal_at (object *s , tuple *world_p )
     // first revert the point to object coordinates
     tuple local , ret ;
     mat4 inv ;
-    inverse_mat4( s->trans , inv ) ;
+    gluInvertMatrix( s->trans , inv ) ;
     multiply_mat4_tuple( inv , world_p , &local ) ;
     // calculate the local normal for the shape
     local = local_normal ( s , &local ) ;

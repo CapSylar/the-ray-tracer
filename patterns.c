@@ -62,8 +62,8 @@ tuple pattern_at_object (object* o , pattern *current_pattern , tuple* point )
     // convert world point ot object space , and then convert the point from object space to pattern space
     mat4 world_object ;
     mat4 object_pattern ;
-    inverse_mat4( o->trans , world_object ) ;
-    inverse_mat4( current_pattern -> pattern_trans , object_pattern ) ;
+    gluInvertMatrix( o->trans , world_object ) ;
+    gluInvertMatrix( current_pattern -> pattern_trans , object_pattern ) ;
 
     tuple pt , ft ;
     multiply_mat4_tuple( world_object , point , &pt ) ;

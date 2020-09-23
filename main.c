@@ -12,8 +12,8 @@
 #include <time.h>
 #include "interface.h"
 
-#define RESOLUTION_WIDTH 1000
-#define RESOLUTION_HEIGHT 1000
+#define RESOLUTION_WIDTH 500
+#define RESOLUTION_HEIGHT 500
 
 int main()
 {
@@ -30,7 +30,7 @@ int main()
     hello.light.position = get_point(-10,50,-20) ;
 
     translate(-2 , 1 , -8 , trans1 ) ;
-    scale( 1,1,1 , trans2 ) ;
+    scale( 0,0,0 , trans2 ) ;
     multiply_mat4( trans1 , trans2 , hello.objects[1].trans ) ;
     hello.objects[1].mat.color = get_color( 0.4f , 0.1f , 0.3f ) ;
     hello.objects[1].mat.specular = 1 ;
@@ -47,10 +47,10 @@ int main()
     hello.objects[0].mat.refractive_index = 1.5f ;
     hello.objects[0].mat.transparency = 1 ;
 
-    init_camera ( RESOLUTION_HEIGHT , RESOLUTION_WIDTH , PI/2 , &cs ) ;
+    init_camera ( RESOLUTION_HEIGHT , RESOLUTION_WIDTH , PI/3 , &cs ) ;
 
-    from = get_point (-4,3,-10);
-    to = get_point (3,1,0);
+    from = get_point (-4,1,-8);
+    to = get_point (3,0.7f,0);
     tuple up = get_vector(0,1,0);
 
     view_transform ( &to , &from , &up , cs.transform );
@@ -165,9 +165,9 @@ int main()
 
     // cylinder
     mat4 trans5;
-    object cylo = get_cylinder();
-    scale( 1 , 1 , 1 , trans1 ) ;
-    translate( 0 , 0 , -4 , trans2 ) ;
+    object cylo = get_sphere();
+    scale( 1.5f , 1.5f , 1.5f , trans1 ) ;
+    translate( 0 , 1.5f , -4 , trans2 ) ;
     multiply_mat4( trans2 , trans1 , cylo.trans ) ;
     cylo.mat.color = get_color(0,0.2f,0) ;
     cylo.mat.reflective = 1 ;
@@ -231,7 +231,7 @@ int main()
         {
             ray god_ray;
             ray_for_pixel(&cs, x, y, &god_ray);
-            tuple color = color_at( &hello , &god_ray, 1, 3);
+            tuple color = color_at( &hello , &god_ray, 1, 5);
             canvas_write(color, x, y);
             interface_write(color, x, y);
         }

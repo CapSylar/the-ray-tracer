@@ -265,7 +265,7 @@ void ray_for_pixel ( camera* c , int px , int py , ray *r )
 
     mat4 reverse ;
 
-    inverse_mat4( c->transform , reverse ) ;
+    gluInvertMatrix( c->transform , reverse ) ;
     tuple pixel ;
     tuple end = get_point (world_x , world_y , -1 ) ;
     multiply_mat4_tuple( reverse , &end , &pixel );
