@@ -12,8 +12,8 @@
 #include <time.h>
 #include "interface.h"
 
-#define RESOLUTION_WIDTH 500
-#define RESOLUTION_HEIGHT 500
+#define RESOLUTION_WIDTH 1000
+#define RESOLUTION_HEIGHT 800
 
 int main()
 {
@@ -47,7 +47,7 @@ int main()
     hello.objects[0].mat.refractive_index = 1.5f ;
     hello.objects[0].mat.transparency = 1 ;
 
-    init_camera ( RESOLUTION_HEIGHT , RESOLUTION_WIDTH , PI/3 , &cs ) ;
+    init_camera ( RESOLUTION_WIDTH , RESOLUTION_HEIGHT , PI/3 , &cs ) ;
 
     from = get_point (-4,1,-8);
     to = get_point (3,0.7f,0);
@@ -220,7 +220,7 @@ int main()
 
     //render( &cs , &hello ) ;
 
-    init_canvas(cs.h_size,cs.v_size) ;
+    init_canvas(cs.v_size,cs.h_size) ;
 
     for ( int y = 0 ; y < cs.v_size ; ++y )
     {

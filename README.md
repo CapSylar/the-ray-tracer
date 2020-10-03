@@ -8,10 +8,14 @@ then `make`
 
 ## TODO
 - clean the project file structure
-- clean API 
+- add support for building scenes from XML
+- clean API
 - optimizations:
     - cube-ray intersection
     - objects are copied around too much
+    
+- shapes to add
+    - cones
 
 
 ## Progress timeline 
@@ -56,6 +60,6 @@ added support for cubes
 
 <img src="screenshots/eoc12.png"/>
 
-### cylinders
+### end of chapter 13
 
 <img src="screenshots/eoc13_1.png"/>

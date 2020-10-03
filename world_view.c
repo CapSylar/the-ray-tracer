@@ -238,10 +238,14 @@ void init_camera (int hsize , int vsize , float fov , camera *c )
     ident_mat4( c->transform ) ;
 
     // calculate the pixel size
-    float half_view = tan( fov/2 ) ;
+    /*Since the camera is always one unit away from the actual canvas, to calculate the canvas' (width/2)  we just use tan(POV/2)
+     * aspect ratio is the horizontal dimension / vertical dimension
+     * */
+
+    float half_view = tanf( fov/2 ) ;
     float aspect_ratio = hsize / ( float ) vsize ;
 
-    if ( aspect_ratio >= 1 )
+/*    if ( aspect_ratio >= 1 )
     {
         c->half_width = half_view ;
         c->half_height = half_view / aspect_ratio ;
@@ -250,15 +254,18 @@ void init_camera (int hsize , int vsize , float fov , camera *c )
     {
         c->half_width = half_view * aspect_ratio ; // TODO: possible error here , half_height should be divided only
         c->half_height = half_view  ;
-    }
+    }*/
+
+    c->half_width = half_view;
+    c->half_height = half_view / aspect_ratio;
 
     c->pixel_size = c->half_width*2 / hsize ;
 }
 
 void ray_for_pixel ( camera* c , int px , int py , ray *r )
 {
-    float x_offset = (px+0.5) * c->pixel_size ;
-    float y_offset = (py+0.5) * c->pixel_size ;
+    float x_offset = (px+0.5f) * c->pixel_size ;
+    float y_offset = (py+0.5f) * c->pixel_size ;
 
     float world_x = c->half_width - x_offset ;
     float world_y = c->half_height - y_offset ;

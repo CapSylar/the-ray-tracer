@@ -26,7 +26,7 @@ int init_interface( int width , int height )
     screen = malloc ( 4 * w * h ) ;
 
     SDL_Window *window = SDL_CreateWindow( "ray tracing...", SDL_WINDOWPOS_UNDEFINED,
-                                           SDL_WINDOWPOS_UNDEFINED, 700 , 700 ,
+                                           SDL_WINDOWPOS_UNDEFINED, (w/(double)h) * 400 ,  400 ,
                                            0);
 
     renderer = SDL_CreateRenderer(window, -1, 0);

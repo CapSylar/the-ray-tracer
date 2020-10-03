@@ -585,3 +585,9 @@ struct canvas
     res = local_normal (&cyly , &point );
 
     fail_unless ( compare_tuple( &direction , &res ) , "failed to generate correct normal for capped cylinder" ) ;
+
+
+
+#test group_chapter_tests
+
+

@@ -12,7 +12,7 @@ struct canvas
 
 } canvas ;
 
-int init_canvas ( int row , int col )
+int init_canvas ( int row , int col ) // col = w , row = h
 {
     canvas.row = row ;
     canvas.col = col ;
@@ -48,7 +48,8 @@ void canvas_ppm () // converts the canvas to ppm file format
         return;
     }
 
-    int header_len = snprintf( ppm_str , 20 , "P3\n%d %d\n255\n" , canvas.row , canvas.col ); // header info
+    // write width then height to PPM header
+    int header_len = snprintf( ppm_str , 20 , "P3\n%d %d\n255\n" , canvas.col , canvas.row ); // header info
     char *running = ppm_str + header_len ;
     // save the pixels to the string, each on a separate line
 
