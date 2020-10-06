@@ -12,7 +12,7 @@ then `make`
 - clean API
 - optimizations:
     - cube-ray intersection
-    - objects are copied around too much
+    - children are copied around too much
     
 - shapes to add
     - cones
@@ -26,7 +26,7 @@ basic raytracing done,sphere shades correctly
 <img src="/screenshots/sphere.png"/>
 
 ### end of chapter 7
-added scenes,the possibility of having several objects
+added scenes,the possibility of having several children
 
 <img src="screenshots/eoc_7.png" />
 

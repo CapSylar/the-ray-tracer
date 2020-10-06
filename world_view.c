@@ -15,33 +15,69 @@
 void init_world (world *new)
 {
     // create a default world where two sphere exist
-    new->obj_count = 2 ;
-    new->objects = malloc ( sizeof(object) * 2 ) ;
+    new->obj_count = 0 ;
+    new->children = 0;
     new->light = get_plight( get_point (-10,10,-10 ) , get_color(1,1,1)) ;
-    new->objects[0] = get_sphere() ;
-    new->objects[1] = get_sphere() ;
+
+    object* sp1 = get_sphere();
+    object* sp2 = get_sphere();
+
+    add_to_world( new , sp1 , OBJECT );
+    add_to_world( new , sp2 , OBJECT );
 
     // configure the spheres beyond the default settings
-    new->objects[0].mat.color = get_color(0.8f,1.0f,0.6f) ;
-    new->objects[0].mat.diffuse = 0.7f ;
-    new->objects[0].mat.specular = 0.2f ;
+    sp1->mat.color = get_color(0.8f, 1.0f, 0.6f) ;
+    sp1->mat.diffuse = 0.7f;
+    sp1->mat.specular = 0.2f;
 
-    scale( 0.5f , 0.5f , 0.5f , (new->objects[1].trans )) ;
+    scale( 0.5f , 0.5f , 0.5f , (sp1->trans )) ;
+}
+
+void init_empty_world(world *new)
+{ // empty but has light, like my brain
+    new->children = 0;
+    new->light = get_plight( get_point (-10,10,-10 ) , get_color(1,1,1)) ;
+    new->obj_count = 0;
 }
 
 void destroy_world ( world *dead )
 {
+    // first we free all the objects and then free the shape_s children list from world
+    for ( int i = 0 ; i < dead->obj_count ; ++i )
+    {
+        free(dead->children[i].child);
+    }
+
     if ( dead->obj_count )
-        free(dead->objects) ;
+        free(dead->children);
+
     dead->obj_count = 0;
 }
 
-void add_obj_world ( world* w , object* new_obj )  //TODO: change the way the objects are stored
+/*void add_obj_world ( world* w , object* new_obj )  //TODO: change the way the children are stored
 {
     w->obj_count++ ;
-    w->objects = realloc( w->objects , sizeof(object) * w->obj_count ) ;
+    w->children = realloc(w->children , sizeof(shape_s) * w->obj_count ) ;
     // copy the object into its new place
-    w->objects[w->obj_count-1] = *new_obj ;
+    w->children[w->obj_count - 1].child = new_obj ;
+    w->children[w->obj_count - 1].type = OBJECT;
+}
+
+void add_grp_world ( world *w , group* new_grp )
+{
+    w->obj_count++ ;
+    w->children = realloc(w->children , sizeof(shape_s) * w->obj_count ) ;
+    // copy the object into its new place
+    w->children[w->obj_count - 1].child = new_grp ;
+    w->children[w->obj_count - 1].type = GROUP ;
+
+}*/
+
+void add_to_world( world* w , void* new_grp , enum child_type type )
+{
+    w->children = realloc(w->children , sizeof(shape_s) * (w->obj_count + 1) ) ;
+    w->children[w->obj_count].child = new_grp;
+    w->children[w->obj_count++].type = type;
 }
 
 void inter_ray_world ( ray* r , world* w , inter_collec *dest )
@@ -53,8 +89,15 @@ void inter_ray_world ( ray* r , world* w , inter_collec *dest )
     for ( int i = 0 ; i < w->obj_count ; ++i )
     {
         inter_collec temp ;
-        intersect( r , w->objects[i] , &temp ) ;
+        shape_s child = w->children[i];
+
+        if ( child.type == GROUP )
+            inter_ray_group( r , child.child , &temp ) ;
+        else
+            intersect(r , child.child , &temp ) ;
+
         merge_destroy( dest , &temp ) ;
+
     }
 
     // sort the list before returning
@@ -91,7 +134,12 @@ void compute_contact ( ray* r , intersection* i , contact_calc* dest, inter_coll
     neg_tuple(&(dest->eye_v));
 
     dest->p_contact = ray_pos(r, dest->t);
-    dest->normal = normal_at(&(dest->obj), &dest->p_contact);
+    dest->normal = normal_at(dest->obj, &dest->p_contact);
+
+    if ( dest->normal.x != dest->normal.x )
+    {
+        int hello = 0;
+    }
 
     dest->inside = dot_tuples(&dest->normal, &dest->eye_v) < 0 ? 1 : 0;
 
@@ -122,11 +170,11 @@ void compute_contact ( ray* r , intersection* i , contact_calc* dest, inter_coll
             }
             else
             {
-                dest->n1 = list.end->i->obj.mat.refractive_index;
+                dest->n1 = list.end->i->obj->mat.refractive_index;
             }
         }
 
-        if ( list_contains( &list , &collec->xs[j].obj ) )
+        if ( list_contains( &list , collec->xs[j].obj ) )
         {
             remove_inter( &list , &collec->xs[j] ) ;
         }
@@ -140,7 +188,7 @@ void compute_contact ( ray* r , intersection* i , contact_calc* dest, inter_coll
             if ( is_empty(&list))
                 dest->n2 = 1 ;
             else
-                dest->n2 = list.end->i->obj.mat.refractive_index ;
+                dest->n2 = list.end->i->obj->mat.refractive_index ;
 
             break ;
         }
@@ -149,17 +197,17 @@ void compute_contact ( ray* r , intersection* i , contact_calc* dest, inter_coll
     free_list( &list ) ;
 
 }
-tuple shade_hit( world* w , contact_calc* calc , int calc_shadows , int depth_limit )
+tuple shade_hit( world* w , contact_calc * calc , int calc_shadows , int depth_limit )
 {
     // first we see if the point is in shadow
     int in_shadow = ( calc_shadows ) ? is_shadowed( w , &calc->adjusted_p ) : 0 ;
     // tests if the point is shadowed by another object, cast a ray from point to see if it arrived to the light source
-    tuple surface =  lighting( &calc->obj.mat , &calc->obj ,&w->light , &calc->adjusted_p , &calc->eye_v , &calc->normal , in_shadow ) ;
+    tuple surface =  lighting( &calc->obj->mat , calc->obj ,&w->light , &calc->adjusted_p , &calc->eye_v , &calc->normal , in_shadow ) ;
 
     tuple reflected = reflected_color( w , calc , depth_limit ) ;
     tuple refracted = refracted_color( w , calc, depth_limit ) ;
 
-    if ( calc->obj.mat.transparency > 0 && calc->obj.mat.reflective > 0 ) // use fresnel
+    if ( calc->obj->mat.transparency > 0 && calc->obj->mat.reflective > 0 ) // use fresnel
     {
         float approx = schlick_approx(calc) ;
         mult_scalar_tuple( &reflected , approx ) ;
@@ -167,7 +215,14 @@ tuple shade_hit( world* w , contact_calc* calc , int calc_shadows , int depth_li
     }
 
     reflected = add_tuples( &surface , &reflected );
-    return add_tuples( &refracted , &reflected ) ;
+    tuple final = add_tuples( &refracted , &reflected ) ;
+
+    if ( final.x != final.x || final.y != final.y || final.z != final.z )
+    {
+        int hello = 0;
+    }
+
+    return final;
 }
 
 tuple color_at ( world *w , ray *r , int calc_shadows , int depth_limit )

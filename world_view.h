@@ -16,5 +16,8 @@ void ray_for_pixel ( camera* c , int px , int py , ray *r ) ;
 void render( camera *c , world *w ) ;
 void add_obj_world ( world* w , object* new_obj ) ;
 int is_shadowed ( world* w , tuple *point) ;
+void init_empty_world(world *new);
+void add_grp_world ( world *w , group* new_grp );
+void add_to_world( world* w , void* new_grp , enum child_type type );
 
 #endif //RAY_TRACER_WORLD_VIEW_H

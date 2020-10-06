@@ -55,8 +55,10 @@ void canvas_ppm () // converts the canvas to ppm file format
 
     for ( int i = 0 ; i < canvas.col * canvas.row ; ++i )
     {
+        int add_current;
         tuple current = canvas.mem[i] ;
-        running += snprintf( running , 14 , "%d %d %d\n", (int)(current.x * 255) , (int)(current.y * 255) , (int)(current.z * 255) ) ;
+        add_current = snprintf( running , 14 , "%d %d %d\n", (int)(current.x * 255) , (int)(current.y * 255) , (int)(current.z * 255) ) ;
+        running += add_current;
     }
 
     *running = 0 ;

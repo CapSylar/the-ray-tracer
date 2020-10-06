@@ -489,7 +489,7 @@ tuple b = ( tuple ) { 2 , 3 , 4 } ;
     tuple point = get_point ( -10,10,-10 ) ;
     tuple color = get_color (0.8,1.0,0.6) ;
     fail_unless ( compare_tuple ( &hello.light.position , &point ) , "failed to create a new world" ) ;
-    fail_unless ( compare_tuple( &hello.objects[0].mat.color , &color ) , "failed to create a new world" ) ;
+    fail_unless ( compare_tuple( &hello.children[0].mat.color , &color ) , "failed to create a new world" ) ;
 
     // try to intersect ray with world
     point = get_point (0,0,-5 ) ;
@@ -557,8 +557,8 @@ tuple b = ( tuple ) { 2 , 3 , 4 } ;
 
     // final test for color_at
 
-    hello.objects[0].mat.ambient = 1;
-    hello.objects[1].mat.ambient = 1;
+    hello.children[0].mat.ambient = 1;
+    hello.children[1].mat.ambient = 1;
 
     point = get_point( 0 , 0, 0.75 );
     direction = get_vector ( 0,0,-1 );
@@ -566,7 +566,7 @@ tuple b = ( tuple ) { 2 , 3 , 4 } ;
 
     color = color_at ( &hello , &god_ray , 0 , 0 ) ;
 
-    fail_unless ( compare_tuple( &color , &hello.objects[1].mat.color ) , "error in color_at function");
+    fail_unless ( compare_tuple( &color , &hello.children[1].mat.color ) , "error in color_at function");
 
     // test the view transform
 
@@ -916,8 +916,8 @@ tuple b = ( tuple ) { 2 , 3 , 4 } ;
     point = get_point(0,0,0) ;
     direction = get_vector( 0,0,1 );
     god_ray = get_ray ( &point , &direction ) ;
-    w.objects[0].mat.ambient = 1 ;
-    i = ( intersection ) { 1 , w.objects[0] } ;
+    w.children[0].mat.ambient = 1 ;
+    i = ( intersection ) { 1 , w.children[0] } ;
     compute_contact ( &god_ray , &i , &calc ) ;
     res = get_color ( 0, 0 ,0 ) ;
 

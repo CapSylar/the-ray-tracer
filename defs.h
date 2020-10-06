@@ -14,6 +14,8 @@ typedef float mat2[4] ;
 
 enum pattern_type { PATTERN_CHECKER , PATTERN_GRADIENT , PATTERN_STRIPES , PATTERN_RING };
 
+struct group;
+
 typedef struct
 {
     float x,y,z,w ;
@@ -70,6 +72,7 @@ typedef struct
 
 typedef struct object
 {
+    struct group *parent;
     int id ;
     int type;
     mat4 trans;
@@ -80,10 +83,29 @@ typedef struct object
     int closed; // if the caps are present or not
 } object ;
 
+enum child_type { OBJECT=0 , GROUP };
+
+typedef struct g_child // there are to be stored in the group array
+{
+    void* child;
+    enum child_type type;
+
+} shape_s ;
+
+typedef struct group
+{
+    struct group *parent;
+    shape_s *children;
+    int count;
+
+    mat4 trans;
+
+} group;
+
 typedef struct
 {
     float t ;
-    object obj;
+    object* obj;
 
 } intersection ;
 
@@ -97,7 +119,7 @@ typedef struct
 typedef struct
 {
     int obj_count ;
-    object* objects ;
+    shape_s* children ;
     point_light light ;
 
 } world ;
@@ -107,7 +129,7 @@ typedef struct
     int inside ; // if it hits the inside of a shape
     tuple p_contact ; // point of contact
     float t ;
-    object obj ;
+    object* obj ;
     tuple eye_v ;
     tuple normal ;
     tuple adjusted_p ; // point that has been adjusted to remove the problem of self intersection for shadows

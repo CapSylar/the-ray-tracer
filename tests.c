@@ -36,13 +36,13 @@ START_TEST(transparency_refraction)
     fail_unless ( float_cmp( mat.transparency , 0 )  , "failed to add transparency to material" ) ;
     fail_unless ( float_cmp ( mat.refractive_index , 1 ) , "failed to add transparency to material" ) ;
 
-    object a = get_glass_sphere() ;
-    scale ( 2,2,2 , a.trans ) ;
+    object* a = get_glass_sphere() ;
+    scale ( 2,2,2 , a->trans ) ;
     a.mat.refractive_index = 1.5f ;
-    object b = get_glass_sphere() ;
+    object* b = get_glass_sphere() ;
     translate ( 0,0,-0.25f , b.trans ) ;
     b.mat.refractive_index = 2 ;
-    object c = get_glass_sphere() ;
+    object* c = get_glass_sphere() ;
     translate ( 0,0,0.25 , c.trans ) ;
     c.mat.refractive_index = 2.5f ;
 
@@ -54,12 +54,12 @@ START_TEST(transparency_refraction)
     inter_collec collec = { 6 } ;
     collec.xs = malloc ( sizeof( intersection ) * 6 ) ;
 
-    collec.xs[0] = ( intersection ) { 2 , a } ;
-    collec.xs[1] = ( intersection ) { 2.75f , b } ;
-    collec.xs[2] = ( intersection ) { 3.25f , c } ;
-    collec.xs[3] = ( intersection ) { 4.75f , b } ;
-    collec.xs[4] = ( intersection ) { 5.25f , c } ;
-    collec.xs[5] = ( intersection ) { 6 , a } ;
+    collec.xs[0] = ( intersection ) { 2 , &a } ;
+    collec.xs[1] = ( intersection ) { 2.75f , &b } ;
+    collec.xs[2] = ( intersection ) { 3.25f , &c } ;
+    collec.xs[3] = ( intersection ) { 4.75f , &b } ;
+    collec.xs[4] = ( intersection ) { 5.25f , &c } ;
+    collec.xs[5] = ( intersection ) { 6 , &a } ;
 
     contact_calc contact ;
     compute_contact ( &god_ray , &collec.xs[0] , &contact, &collec ) ;
@@ -92,7 +92,7 @@ START_TEST(transparency_refraction)
     direction = get_vector (0,0,1) ;
     god_ray = get_ray ( &point , &direction );
     translate ( 0,0,1 , a.trans ) ;
-    intersection i = { 5 , a } ;
+    intersection i = { 5 , &a } ;
     collec.count = 1;
     collec.xs[0] = i ;
 
@@ -104,8 +104,8 @@ START_TEST(transparency_refraction)
     world hello ;
     init_world ( &hello ) ;
     collec.count = 2 ;
-    collec.xs[0] = ( intersection ) { 4 , hello.objects[0] } ;
-    collec.xs[1] = ( intersection ) { 6 , hello.objects[0] } ;
+    collec.xs[0] = ( intersection ) { 4 , hello.children[0] } ;
+    collec.xs[1] = ( intersection ) { 6 , hello.children[0] } ;
     god_ray = get_ray ( &point , &direction ) ;
     compute_contact ( &god_ray , &collec.xs[0] , &contact , &collec ) ;
     tuple got_color = refracted_color( &hello , &contact , 5 ) ;
@@ -115,15 +115,15 @@ START_TEST(transparency_refraction)
 
     // finding the refracted color under total internal reflection
 
-    hello.objects[0].mat.transparency = 1 ;
-    hello.objects[0].mat.refractive_index = 1.5;
+    hello.children[0]->mat.transparency = 1 ;
+    hello.children[0]->mat.refractive_index = 1.5;
     point = get_point (0,0,0.7071) ;
     direction = get_vector( 0,1,0 ) ;
     god_ray = get_ray ( &point , &direction );
 
     collec.count = 2 ;
-    collec.xs[0] = ( intersection ) { -0.7071f , hello.objects[0] } ;
-    collec.xs[1] = ( intersection ) { 0.7071f , hello.objects[1] } ;
+    collec.xs[0] = ( intersection ) { -0.7071f , hello.children[0] } ;
+    collec.xs[1] = ( intersection ) { 0.7071f , hello.children[1] } ;
 
     compute_contact ( &god_ray , &collec.xs[1] , &contact , &collec );
     got_color = refracted_color (&hello , &contact , 5 ) ;
@@ -152,7 +152,7 @@ START_TEST(transparency_refraction)
     god_ray = get_ray(&point , &direction ) ;
 
     collec.count = 1;
-    collec.xs[0] = ( intersection ) { 1.4142f , floor } ;
+    collec.xs[0] = ( intersection ) { 1.4142f , &floor } ;
 
     compute_contact( &god_ray , &collec.xs[0], &contact , &collec ) ;
     got_color = shade_hit ( &hello , &contact , 1 , 5 ) ;
@@ -176,8 +176,8 @@ START_TEST(fresnel_effect)
     inter_collec collec;
     collec.count = 2 ;
     collec.xs = malloc ( sizeof(intersection) * 2 ) ;
-    collec.xs[0] = ( intersection ) { -0.7071f , sphere } ;
-    collec.xs[1] = ( intersection ) { 0.7071f , sphere } ;
+    collec.xs[0] = ( intersection ) { -0.7071f , &sphere } ;
+    collec.xs[1] = ( intersection ) { 0.7071f , &sphere } ;
     contact_calc calc ;
     compute_contact( &god_ray , &collec.xs[1] , &calc , &collec ) ;
     float reflec = schlick_approx ( &calc ) ;
@@ -190,8 +190,8 @@ START_TEST(fresnel_effect)
     point = get_point (0,0,0) ;
     direction = get_vector(0,1,0) ;
     god_ray = get_ray ( &point , &direction ) ;
-    collec.xs[0] = ( intersection ) { -1 , sphere  } ;
-    collec.xs[1] = ( intersection ) { 1 , sphere } ;
+    collec.xs[0] = ( intersection ) { -1 , &sphere  } ;
+    collec.xs[1] = ( intersection ) { 1 , &sphere } ;
     compute_contact( &god_ray , &collec.xs[1] , &calc , &collec ) ;
     reflec = schlick_approx ( &calc ) ;
 
@@ -204,7 +204,7 @@ START_TEST(fresnel_effect)
     god_ray = get_ray( &point , &direction ) ;
 
     collec.count = 1 ;
-    collec.xs[0] = ( intersection ) { 1.8589f , sphere } ;
+    collec.xs[0] = ( intersection ) { 1.8589f , &sphere } ;
     compute_contact( &god_ray , &collec.xs[0] , &calc , &collec ) ;
     reflec = schlick_approx ( &calc ) ;
 
@@ -233,7 +233,7 @@ START_TEST(fresnel_effect)
 
     add_obj_world ( &hello , &ball );
     collec.count = 1 ;
-    collec.xs[0] = ( intersection ) { 1.4142f , floor } ;
+    collec.xs[0] = ( intersection ) { 1.4142f , &floor } ;
     compute_contact( &god_ray , &collec.xs[0] , &calc , &collec ) ;
 
     tuple color = shade_hit( &hello , &calc , 1 , 5 ) ;
@@ -256,7 +256,7 @@ START_TEST(cube_intersection)
     inter_collec collec = {0} ;
 
     //case 1
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
     fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
@@ -270,7 +270,7 @@ START_TEST(cube_intersection)
     direction = get_vector(1,0,0) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
     fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
@@ -282,7 +282,7 @@ START_TEST(cube_intersection)
     direction = get_vector(0,-1,0) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
     fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
@@ -294,7 +294,7 @@ START_TEST(cube_intersection)
     direction = get_vector(0,1,0) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
     fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
@@ -306,7 +306,7 @@ START_TEST(cube_intersection)
     direction = get_vector(0,0,-1) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
     fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
@@ -318,7 +318,7 @@ START_TEST(cube_intersection)
     direction = get_vector(0,0,1) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
     fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
@@ -330,7 +330,7 @@ START_TEST(cube_intersection)
     direction = get_vector(0,0,-1) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 2 , collec.count ) , "failed to intersect the cube correctly" ) ;
     fail_unless ( float_cmp ( 4 , collec.xs[0].t ) , "failed to intersect the cube correcly " ) ;
@@ -342,7 +342,7 @@ START_TEST(cube_intersection)
     direction = get_vector(0.2673f,0.5345f,0.8018f) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
 
@@ -350,7 +350,7 @@ START_TEST(cube_intersection)
     direction = get_vector(0.8018f , 0.2673f , 0.5345f ) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
 
@@ -358,7 +358,7 @@ START_TEST(cube_intersection)
     direction = get_vector(0.5345f , 0.8018f , 0.2673f ) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
 
@@ -366,7 +366,7 @@ START_TEST(cube_intersection)
     direction = get_vector(0,0,-1) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
 
@@ -374,7 +374,7 @@ START_TEST(cube_intersection)
     direction = get_vector(0,-1,0) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
 
@@ -382,7 +382,7 @@ START_TEST(cube_intersection)
     direction = get_vector(-1,0,0) ;
     god_ray = get_ray ( &point , &direction ) ;
 
-    intersect_cube( &god_ray , cube , &collec ) ;
+    intersect_cube( &god_ray , &cube , &collec ) ;
 
     fail_unless ( float_cmp( 0 , collec.count ) , "failed to intersect the cube correctly" ) ;
 
@@ -436,7 +436,7 @@ START_TEST(cylinder_intersection)
 
     ray god_ray = get_ray ( &point , &direction ) ;
     inter_collec collec = {0} ;
-    intersect_cylinder( &god_ray , cyly , &collec );
+    intersect_cylinder( &god_ray , &cyly , &collec );
 
     fail_unless ( collec.count == 0 , "failed to correctly intersect the cylinder") ;
 
@@ -445,7 +445,7 @@ START_TEST(cylinder_intersection)
     god_ray = get_ray ( &point , &direction );
     destroy_coll( &collec ) ;
 
-    intersect_cylinder( &god_ray , cyly , &collec ) ;
+    intersect_cylinder( &god_ray , &cyly , &collec ) ;
 
     fail_unless ( collec.count == 0 , "failed to correctly intersect the cylinder" ) ;
 
@@ -453,7 +453,7 @@ START_TEST(cylinder_intersection)
     direction = get_vector(1,1,1);
     god_ray = get_ray( &point , &direction );
 
-    intersect_cylinder ( &god_ray , cyly , &collec );
+    intersect_cylinder ( &god_ray , &cyly , &collec );
 
     fail_unless ( collec.count == 0 , "failed to correctly intersect the cylinder" ) ;
     destroy_coll ( &collec ) ;
@@ -464,7 +464,7 @@ START_TEST(cylinder_intersection)
     direction = get_vector( 0,0,1 );
     god_ray = get_ray( &point , &direction );
 
-    intersect_cylinder ( &god_ray , cyly , &collec );
+    intersect_cylinder ( &god_ray , &cyly , &collec );
     fail_unless( collec.count == 2 , "failed to correctly intersect the cylinder") ;
     fail_unless ( float_cmp(collec.xs[0].t, 5) , "failed to correctly intersect the cylinder" ) ;
     fail_unless ( float_cmp(collec.xs[1].t , 5), "failed to correcly intersect the cylinder" ) ;
@@ -473,7 +473,7 @@ START_TEST(cylinder_intersection)
      direction = get_vector( 0.1f , 1 , 1 );
      god_ray = get_ray( &point , &direction );
 
-     intersect_cylinder ( &god_ray , cyly , &collec );
+     intersect_cylinder ( &god_ray , &cyly , &collec );
      fail_unless( collec.count == 2 , "failed to correctly intersect the cylinder") ;
      fail_unless ( float_cmp( collec.xs[0].t, 6.80800581f ) , "failed to correctly intersect the cylinder" ) ;
      fail_unless ( float_cmp( collec.xs[1].t , 7.08869839f ), "failed to correcly intersect the cylinder" ) ;
@@ -486,42 +486,42 @@ START_TEST(cylinder_intersection)
     point = get_point( 0,1.5f,0 );
     direction = get_vector ( 0.1f,1,0 );
     god_ray = get_ray( &point , &direction );
-    intersect_cylinder ( &god_ray , cyly , &collec );
+    intersect_cylinder ( &god_ray , &cyly , &collec );
 
     fail_unless ( collec.count == 0 , "failed to correctly intersect capped cylinder" ) ;
 
     point = get_point( 0,3,-5 );
     direction = get_vector ( 0,0,1 );
     god_ray = get_ray( &point , &direction );
-    intersect_cylinder ( &god_ray , cyly , &collec );
+    intersect_cylinder ( &god_ray , &cyly , &collec );
 
     fail_unless ( collec.count == 0 , "failed to correcly intersect capped cylinder" ) ;
 
     point = get_point( 0,0,-5 );
     direction = get_vector ( 0,0,1 );
     god_ray = get_ray( &point , &direction );
-    intersect_cylinder ( &god_ray , cyly , &collec );
+    intersect_cylinder ( &god_ray , &cyly , &collec );
 
     fail_unless ( collec.count == 0 , "failed to correcly intersect capped cylinder" ) ;
 
     point = get_point( 0,2,-5 );
     direction = get_vector ( 0,0,1 );
     god_ray = get_ray( &point , &direction );
-    intersect_cylinder ( &god_ray , cyly , &collec );
+    intersect_cylinder ( &god_ray , &cyly , &collec );
 
     fail_unless ( collec.count == 0 , "failed to correcly intersect capped cylinder" ) ;
 
     point = get_point( 0,1,-5 );
     direction = get_vector ( 0,0,1 );
     god_ray = get_ray( &point , &direction );
-    intersect_cylinder ( &god_ray , cyly , &collec );
+    intersect_cylinder ( &god_ray , &cyly , &collec );
 
     fail_unless ( collec.count == 0 , "failed to correcly intersect capped cylinder" ) ;
 
     point = get_point( 0,1.5f,-2 );
     direction = get_vector ( 0,0,1 );
     god_ray = get_ray( &point , &direction );
-    intersect_cylinder ( &god_ray , cyly , &collec );
+    intersect_cylinder ( &god_ray , &cyly , &collec );
 
     fail_unless ( collec.count == 2 , "failed to correcly intersect capped cylinder" ) ;
 
@@ -533,7 +533,7 @@ START_TEST(cylinder_intersection)
     direction = get_vector( 0,-1,0 );
 
     god_ray = get_ray( &point, &direction );
-    intersect_cylinder( &god_ray , cyly , &collec );
+    intersect_cylinder( &god_ray , &cyly , &collec );
 
     fail_unless ( collec.count == 2 , "failed to correctly intersect capped cylinder" ) ;
 
@@ -541,7 +541,7 @@ START_TEST(cylinder_intersection)
     direction = get_vector( 0,-1,2 );
 
     god_ray = get_ray( &point , &direction ) ;
-    intersect_cylinder ( &god_ray , cyly , &collec ) ;
+    intersect_cylinder ( &god_ray , &cyly , &collec ) ;
 
     fail_unless ( collec.count == 2 , "failed to correctly intersect capped cylinder" );
 
@@ -549,7 +549,7 @@ START_TEST(cylinder_intersection)
     direction = get_vector( 0,-1,1 );
 
     god_ray = get_ray( &point , &direction ) ;
-    intersect_cylinder ( &god_ray , cyly , &collec ) ;
+    intersect_cylinder ( &god_ray , &cyly , &collec ) ;
 
     //fail_unless ( collec.count == 2 , "failed to correctly intersect capped cylinder" );
 
@@ -557,7 +557,7 @@ START_TEST(cylinder_intersection)
     direction = get_vector( 0,1,2 );
 
     god_ray = get_ray( &point , &direction ) ;
-    intersect_cylinder ( &god_ray , cyly , &collec ) ;
+    intersect_cylinder ( &god_ray , &cyly , &collec ) ;
 
     fail_unless ( collec.count == 2 , "failed to correctly intersect capped cylinder" );
 
@@ -565,7 +565,7 @@ START_TEST(cylinder_intersection)
     direction = get_vector( 0,1,1 );
 
     god_ray = get_ray( &point , &direction ) ;
-    intersect_cylinder ( &god_ray , cyly , &collec ) ;
+    intersect_cylinder ( &god_ray , &cyly , &collec ) ;
 
     //fail_unless ( collec.count == 2 , "failed to correctly intersect capped cylinder" );
 
@@ -610,6 +610,137 @@ START_TEST(cylinder_intersection)
     res = local_normal (&cyly , &point );
 
     fail_unless ( compare_tuple( &direction , &res ) , "failed to generate correct normal for capped cylinder" ) ;
+
+
+
+}
+END_TEST
+
+START_TEST(group_chapter_tests)
+{
+#line 592
+
+    // test group creation
+    group new_grp = get_group();
+    object sphere = get_sphere();
+
+    mat4 expected;
+    ident_mat4(expected);
+
+    fail_unless( compare_mat4 ( expected , new_grp.trans ) == 0 , "failed to create a group" ) ;
+    fail_unless ( sphere.parent == 0 , "failed to create a correct sphere" ) ;
+    fail_unless (  new_grp.count == 0 , "failed to reset the count for the group " ) ;
+
+    add_g_object ( &new_grp , &sphere );
+
+    fail_unless( new_grp.children[0].type == 0 , "failed to add sphere to the group" );
+
+    // test the intersections now
+
+    tuple point = get_point (0,0,0);
+    tuple direction = get_vector ( 0,0,1);
+
+    new_grp = get_group();
+    ray god_ray = get_ray ( &point , &direction );
+    inter_collec collec ;
+
+    inter_ray_group ( &god_ray , &new_grp , &collec );
+    fail_unless ( collec.count == 0 , "failed to intersect the group" ) ;
+
+    object s1 = get_sphere();
+    object s2 = get_sphere();
+    translate ( 0,0,-3 , s2.trans ) ;
+    object s3 = get_sphere();
+    translate ( 5,0,0 , s3.trans ) ;
+
+    add_g_object ( &new_grp , &s1 );
+    add_g_object ( &new_grp , &s2 );
+    add_g_object ( &new_grp , &s3 );
+
+    point = get_point (0,0,-5);
+    direction = get_vector (0,0,1);
+
+    destroy_coll ( &collec ) ;
+
+    inter_ray_group ( &god_ray , &new_grp , &collec );
+
+    fail_unless ( collec.count == 4 , "failed to intersect the group" );
+    fail_unless ( collec.xs[0].obj->id == s2.id , "failed to find the correct intersection" ) ;
+    fail_unless ( collec.xs[1].obj->id == s2.id , "failed to find the correct intersection" ) ;
+    fail_unless ( collec.xs[2].obj->id == s1.id , "failed to find the correct intersection" ) ;
+    fail_unless ( collec.xs[3].obj->id == s1.id , "failed to find the correct intersection" ) ;
+
+    new_grp = get_group();
+    scale ( 2,2,2 , new_grp.trans );
+    translate ( 5,0,0 , s1.trans );
+
+    add_g_object ( &new_grp , &s1 );
+
+    point = get_point ( 10,0,-10);
+    direction = get_vector( 0,0,1 );
+
+    god_ray = get_ray ( &point , &direction );
+
+    inter_ray_group ( &god_ray , &new_grp , &collec);
+
+    fail_unless ( collec.count == 2 , "failed to find the correct intersection" ) ;
+
+    group grp1 = get_group();
+    rotate_y( PI/2 , grp1.trans );
+    group grp2 = get_group();
+    scale ( 2,2,2 , grp2.trans );
+
+    add_g_group ( &grp1 , &grp2 );
+    object sphere1 = get_sphere();
+
+    translate ( 5,0,0, sphere1.trans );
+    add_g_object ( &grp2 , &sphere1);
+
+    tuple got = world_to_object ( &sphere1 , OBJECT , get_point(-2,0,-10) );
+
+    tuple expected2 = get_point (0,0,-1);
+
+    fail_unless ( compare_tuple( &expected2 , &got ) , "failed to transform world_to_object coordinates" );
+
+    // test the normal_to_world
+
+    grp1 = get_group();
+    rotate_y( PI/2 , grp1.trans );
+    grp2 = get_group();
+    scale ( 1,2,3 , grp2.trans );
+
+    add_g_group ( &grp1 , &grp2 );
+    sphere1 = get_sphere();
+
+    translate ( 5,0,0, sphere1.trans );
+    add_g_object ( &grp2 , &sphere1);
+
+    got = normal_to_world ( &sphere1 , OBJECT , get_vector( 0.57735f , 0.57735f , 0.57735f ) );
+
+    expected2 = get_vector( 0.285714269f , 0.428571433f , -0.857142866f );
+
+    fail_unless ( compare_tuple( &expected2 , &got ) , "failed to transform world_to_object coordinates" );
+
+    // finalize shit
+
+    grp1 = get_group();
+    rotate_y( PI/2 , grp1.trans );
+    grp2 = get_group();
+    scale ( 1,2,3 , grp2.trans );
+
+    add_g_group ( &grp1 , &grp2 );
+    sphere1 = get_sphere();
+
+    translate ( 5,0,0, sphere1.trans );
+    add_g_object ( &grp2 , &sphere1);
+
+    tuple get33 = get_point (1.7321f , 1.1547f , -5.5774f);
+
+    got = normal_at ( &sphere1 , &get33 );
+
+    expected2 = get_vector( 0.285714269f , 0.428571433f , -0.857142866f );
+
+    //fail_unless ( compare_tuple( &expected2 , &got ) , "failed to transform world_to_object coordinates" ); workssss
 }
 END_TEST
 
@@ -625,6 +756,7 @@ int main(void)
     tcase_add_test(tc1_1, fresnel_effect);
     tcase_add_test(tc1_1, cube_intersection);
     tcase_add_test(tc1_1, cylinder_intersection);
+    tcase_add_test(tc1_1, group_chapter_tests);
 
     srunner_run_all(sr, CK_ENV);
     nf = srunner_ntests_failed(sr);

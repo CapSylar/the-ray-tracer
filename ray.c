@@ -10,7 +10,6 @@
 #include "patterns.h"
 #include "world_view.h"
 
-
 ray get_ray ( tuple* origin , tuple* direction )
 {
     ray ret ;
@@ -29,17 +28,16 @@ tuple ray_pos ( ray* x , float t )
     return add_tuples( &(x->org) , &ret ) ;
 }
 
-void intersect ( ray* r , object s , inter_collec* dest )
+void intersect ( ray* r , object* s , inter_collec* dest )
 {
-    // take the matrix of the get_sphere , invert it and then transform the ray using it
     mat4 inver ;
-    gluInvertMatrix( s.trans , inver ) ;
+    gluInvertMatrix( s->trans , inver ) ;
     ray new_r = transform_ray( r , inver ) ;
     *dest = ( inter_collec ){0} ; // for sanity
 
     // determine what kind of shape we are working with
 
-    switch ( s.type )
+    switch ( s->type )
     {
         case SPHERE_OBJECT:
             intersect_sphere( &new_r , s , dest ) ;
@@ -54,12 +52,13 @@ void intersect ( ray* r , object s , inter_collec* dest )
             intersect_cylinder( &new_r , s , dest ) ;
             break;
         default:
-            fprintf( stderr , "shape type not supported\n" ) ;
+            fprintf( stderr , "shape type not supported: %d \n" , s->type ) ;
             break ;
     }
 
 }
-void intersect_sphere ( ray *r , object s , inter_collec* dest )
+
+void intersect_sphere ( ray *r , object* s , inter_collec* dest )
 {
     tuple sphere_to_ray = get_point (0,0,0) ;
     sphere_to_ray = sub_tuples( &(r->org) , &sphere_to_ray ) ;
@@ -85,7 +84,7 @@ void intersect_sphere ( ray *r , object s , inter_collec* dest )
     }
 }
 
-void intersect_cylinder ( ray* r , object s , inter_collec* dest )
+void intersect_cylinder ( ray* r , object* s , inter_collec* dest )
 {
     // just a circle and ray intersection
     dest->count = 0;
@@ -116,14 +115,14 @@ void intersect_cylinder ( ray* r , object s , inter_collec* dest )
         // check is we exceeded the limits
         a = r->org.y + r->dir.y * inter1;
 
-        if (a < s.max && a > s.min) // gets rendered
+        if (a < s->max && a > s->min) // gets rendered
         {
             dest->xs[0] = (intersection) {inter1, s};
             dest->count++;
         }
 
         a = r->org.y + r->dir.y * inter2;
-        if (a < s.max && a > s.min) // gets rendered
+        if (a < s->max && a > s->min) // gets rendered
         {
             dest->xs[dest->count] = (intersection) {inter2, s};
             dest->count++;
@@ -142,7 +141,7 @@ void intersect_cone( ray* r , object s , inter_collec* dest )
     float c = r->org.x*r->org.x - r->org.y*r->org.y + r->org.z*r->org.z ;
 }
 
-void intersect_plane ( ray *r , object s , inter_collec* dest  )
+void intersect_plane ( ray *r , object* s , inter_collec* dest  )
 {
     if ( fabsf(r->dir.y) < EPS ) // will *never* intersect the plane
     {
@@ -155,76 +154,207 @@ void intersect_plane ( ray *r , object s , inter_collec* dest  )
     dest->xs[0].t = -(r->org.y) / r->dir.y ;
     dest->xs[0].obj = s ;
 }
-object get_sphere ()
+object* get_sphere ()
 {
-    object sphere;
-    ident_mat4(sphere.trans);
-    def_material(&sphere.mat);
-    sphere.type = SPHERE_OBJECT;
-    sphere.id = rand() ;
+    object* sphere = malloc ( sizeof(object) ) ;
+    sphere->parent = 0;
+    ident_mat4(sphere->trans);
+    def_material(&sphere->mat);
+    sphere->type = SPHERE_OBJECT;
+    sphere->id = rand() ;
 
     return sphere;
 }
 // just for the lolz
-object get_glass_sphere()
+object* get_glass_sphere()
 {
-    object sphere = get_sphere() ;
-    sphere.mat.transparency = 1.0f ;
-    sphere.mat.refractive_index = 1.5f ;
-    sphere.id = rand() ;
+    object* sphere = malloc ( sizeof(object) ) ;
+    sphere->mat.transparency = 1.0f ;
+    sphere->mat.refractive_index = 1.5f ;
+    sphere->id = rand() ;
 
     return sphere ;
 }
-object get_plane ()
+object* get_plane ()
 {
-    object plane;
-    ident_mat4( plane.trans ) ;
-    def_material(&plane.mat) ;
-    plane.id = rand() ;
-    plane.type = PLANE_OBJECT ;
+    object* plane = malloc ( sizeof(object) ) ;
+    plane->parent = 0;
+    ident_mat4( plane->trans ) ;
+    def_material(&plane->mat) ;
+    plane->id = rand() ;
+    plane->type = PLANE_OBJECT ;
 
     return plane ;
 }
 
-object get_cube ()
+object* get_cube ()
 {
-    object cube;
-    ident_mat4( cube.trans ) ;
-    def_material( &cube.mat ) ;
-    cube.id = rand();
-    cube.type = CUBE_OBJECT ;
+    object* cube = malloc ( sizeof(object) ) ;
+    cube->parent = 0;
+    ident_mat4( cube->trans ) ;
+    def_material( &cube->mat ) ;
+    cube->id = rand();
+    cube->type = CUBE_OBJECT ;
 
     return cube;
 }
 
-object get_cylinder()
+object* get_cylinder()
 {
-    object cylinder;
-    ident_mat4(cylinder.trans) ;
-    def_material( &cylinder.mat ) ;
-    cylinder.id = rand() ;
-    cylinder.type = CYLINDER_OBJECT ;
+    object* cylinder = malloc ( sizeof(object) ) ;
+    cylinder->parent = 0;
+    ident_mat4(cylinder->trans) ;
+    def_material( &cylinder->mat ) ;
+    cylinder->id = rand() ;
+    cylinder->type = CYLINDER_OBJECT ;
 
-    cylinder.min = -INFINITY;
-    cylinder.max = INFINITY;
-    cylinder.closed = 0 ;
+    cylinder->min = -INFINITY;
+    cylinder->max = INFINITY;
+    cylinder->closed = 0 ;
 
     return cylinder;
 }
 
-object get_cone()
+object* get_cone()
 {
-    object cone;
-    ident_mat4(cone.trans);
-    def_material(&cone.mat);
-    cone.id = rand() ;
-    cone.type = CONE_OBJECT;
+    object* cone = malloc ( sizeof(object) ) ;
+    cone->parent = 0;
+    ident_mat4(cone->trans);
+    def_material(&cone->mat);
+    cone->id = rand() ;
+    cone->type = CONE_OBJECT;
 
-    cone.min = -INFINITY;
-    cone.max = INFINITY;
-    cone.closed = 0;
+    cone->min = -INFINITY;
+    cone->max = INFINITY;
+    cone->closed = 0;
 
     return cone;
+}
+
+group* get_group()
+{
+    group* new_grp = malloc ( sizeof(group) );
+    new_grp->parent = 0;
+    new_grp->count = 0;
+    new_grp->children = 0;
+    ident_mat4(new_grp->trans);
+
+    return new_grp;
+}
+
+void add_g_gchild (group *father , shape_s* son )
+{
+    father->children = realloc( father->children , ++father->count * sizeof(shape_s) ) ; //TODO: change this but works for now
+    father->children[father->count-1] = *son ; // add to list
+}
+
+void add_g_object( group *father , object *son ) // wrapper
+{
+    son->parent = father;
+    shape_s *new = malloc (sizeof( shape_s ));
+    new->child = son;
+    new->type = OBJECT;
+
+    add_g_gchild( father , new );
+}
+
+void add_g_group ( group *father , group *son ) // wrapper
+{
+    son->parent = father;
+    shape_s *new = malloc (sizeof( shape_s ));
+    new->child = son;
+    new->type = GROUP ;
+
+    add_g_gchild( father , new );
+}
+
+void inter_ray_group ( ray* r , group* grp , inter_collec *dest )
+{
+    mat4 inver;
+    gluInvertMatrix( grp->trans , inver );
+    ray new_r = transform_ray( r , inver );
+    // iterate over all the object in the world and intersect them
+    // clear dest array to avoid problems
+    *dest = ( inter_collec ) {0} ;
+
+    for ( int i = 0 ; i < grp->count ; ++i )
+    {
+        inter_collec temp ;
+
+        // unpack the child and intersect
+        //TODO: no recursive call for now, so no support for groups inside other groups
+
+        if ( grp->children[i].type == GROUP )
+            inter_ray_group( &new_r , grp->children[i].child , &temp );
+        else
+            intersect( &new_r , grp->children[i].child , &temp ) ;
+
+        merge_destroy( dest , &temp ) ;
+
+    }
+
+    // sort the list before returning
+    qsort( dest->xs , dest->count , sizeof(intersection) , comp_intersections ) ;
+}
+
+tuple world_to_object ( void* child , enum child_type type , tuple point )
+{
+    // transform a point from world space to object space taking into account the "groups" in between
+    float* mat;
+
+    if ( type == OBJECT )
+    {
+        if (((object* ) child)->parent)
+            point = world_to_object(((object *) child)->parent, GROUP, point);
+        mat = ((object *) child)->trans;
+    }
+    else if ( type == GROUP )
+    {
+        if (((group*) child)->parent)
+            point = world_to_object(((group *) child)->parent, GROUP, point);
+        mat = ((group *) child)->trans;
+    }
+
+    mat4 inver;
+    tuple res;
+    gluInvertMatrix( mat , inver );
+    multiply_mat4_tuple( inver , &point , &res ) ;
+
+    return res;
+}
+
+tuple normal_to_world ( void *child , enum child_type type , tuple normal )
+{
+    // first transform the normal here then pass it to the parents
+    float* mat;
+    void* parent;
+
+    if ( type == OBJECT )
+    {
+        mat = ((object *) child)->trans;
+        parent = ((object *) child) ->parent ;
+    }
+
+    else
+    {
+        mat = ((group *) child)->trans;
+        parent = ((group *) child) ->parent ;
+    }
+
+    mat4 inverse , transposed ;
+    tuple new_normal;
+    gluInvertMatrix( mat , inverse );
+    transpose_mat4( inverse , transposed );
+    multiply_mat4_tuple( transposed , &normal , &new_normal );
+    new_normal.w = 0 ;
+    normalize_tuple( &new_normal );
+
+    if ( parent )
+    {
+        new_normal = normal_to_world(parent , GROUP , new_normal );
+    }
+
+    return new_normal;
 }
 
 int comp_intersections (const void* elem1 , const void* elem2 )
@@ -302,7 +432,7 @@ void set_transform ( object *o , mat4 trans )
 tuple normal_at (object *s , tuple *world_p )
 {
     // first revert the point to object coordinates
-    tuple local , ret ;
+    tuple local ; /*, ret ;
     mat4 inv ;
     gluInvertMatrix( s->trans , inv ) ;
     multiply_mat4_tuple( inv , world_p , &local ) ;
@@ -314,9 +444,14 @@ tuple normal_at (object *s , tuple *world_p )
     transpose_mat4( inv , final ) ;
     multiply_mat4_tuple( final , &local , &ret  ) ;
     ret.w = 0 ; // hack again, convert to vector
-    normalize_tuple( &ret );
+    normalize_tuple( &ret );*/
 
-    return ret ;
+    local = world_to_object( s , OBJECT , *world_p );
+    local = local_normal( s , &local );
+
+    return normal_to_world( s, OBJECT , local );
+
+    //return ret;
 }
 tuple local_normal ( object* s , tuple* local_p )
 {
@@ -460,13 +595,13 @@ tuple reflected_color ( world* w , contact_calc* calc , int depth_limit )
     ray god_ray = get_ray( &calc->adjusted_p , &calc->reflectv ) ;
     tuple color = color_at( w , &god_ray , 1 , depth_limit-1 ) ;
 
-    mult_scalar_tuple ( &color , calc->obj.mat.reflective ) ;
+    mult_scalar_tuple ( &color , calc->obj->mat.reflective ) ;
     return color ;
 }
 
 tuple refracted_color ( world* w , contact_calc* calc , int depth_limit )
 {
-    if ( depth_limit <= 0 || float_cmp(calc->obj.mat.transparency,0) )
+    if ( depth_limit <= 0 || float_cmp(calc->obj->mat.transparency,0) )
         return ( tuple ) { 0 , 0 , 0, 0 } ; // black
 
     // calculate the refracted ray direction
@@ -488,7 +623,7 @@ tuple refracted_color ( world* w , contact_calc* calc , int depth_limit )
 
     ray god_ray = get_ray( &calc->inner_point , &refracted_dir ) ;
     tuple color = color_at( w , &god_ray , 1 , depth_limit-1 ) ;
-    mult_scalar_tuple( &color , calc->obj.mat.transparency ) ;
+    mult_scalar_tuple( &color , calc->obj->mat.transparency ) ;
 
     return color ;
 }
@@ -547,7 +682,7 @@ void intersect_axis( float axis_origin , float axis_direction , float *tmin , fl
 
 }
 
-void intersect_cube ( ray* god_ray , object cube , inter_collec *collec )
+void intersect_cube ( ray* god_ray , object* cube , inter_collec *collec )
 {
     // the cube is really just a collection of 6 infinite planes
 
@@ -601,18 +736,18 @@ int check_cyl_caps(ray *r , float t)
     return ( x*x + z*z ) <= 1 ;
 }
 
-void intersect_cyl_caps( ray* r , object cylinder , inter_collec* collec )
+void intersect_cyl_caps( ray* r , object* cylinder , inter_collec* collec )
 {
-    if ( !cylinder.closed || float_cmp(r->dir.y,0) )
+    if ( !cylinder->closed || float_cmp(r->dir.y,0) )
         return;
 
     // check intersection with the bottom cap
-    float tb = (cylinder.min - r->org.y) / r->dir.y ;
+    float tb = (cylinder->min - r->org.y) / r->dir.y ;
     if ( check_cyl_caps(r,tb) )
         collec->xs[collec->count++] = ( intersection ){ tb , cylinder } ;
 
     // check intersection with the upper cap
-    float tu = (cylinder.max - r->org.y) / r->dir.y ;
+    float tu = (cylinder->max - r->org.y) / r->dir.y ;
     if ( check_cyl_caps(r,tu))
         collec->xs[collec->count++] = ( intersection ) { tu , cylinder } ;
 

@@ -4,6 +4,7 @@
 #include <math.h>
 #include "matrix_routines.h"
 #include "factories.h"
+#include "ray.h"
 
 tuple stripe_pattern_at ( object* o , pattern* pattern , tuple* point )
 {
@@ -59,14 +60,15 @@ tuple checker_pattern_at ( object* o ,  pattern* pattern , tuple* point )
 }
 tuple pattern_at_object (object* o , pattern *current_pattern , tuple* point )
 {
-    // convert world point ot object space , and then convert the point from object space to pattern space
-    mat4 world_object ;
+    // convert world point to object space , and then convert the point from object space to pattern space
+    //mat4 world_object ;
     mat4 object_pattern ;
-    gluInvertMatrix( o->trans , world_object ) ;
+    //gluInvertMatrix( o->trans , world_object ) ;
     gluInvertMatrix( current_pattern -> pattern_trans , object_pattern ) ;
 
     tuple pt , ft ;
-    multiply_mat4_tuple( world_object , point , &pt ) ;
+    //multiply_mat4_tuple( world_object , point , &pt ) ;
+    pt = world_to_object( o , OBJECT , *point );
     multiply_mat4_tuple( object_pattern , &pt , &ft ) ; // ft is not in pattern space
 
     return current_pattern->pattern_at( o , current_pattern , &ft ) ;

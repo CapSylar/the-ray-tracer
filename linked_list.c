@@ -9,7 +9,7 @@ void remove_inter ( linked_l* list , intersection* inter )
 
     for ( node* i = list->start , *last = 0 ; i ; )
     {
-        if( i->i->obj.id == inter->obj.id )
+        if( i->i->obj->id == inter->obj->id )
         {
             // delete the node
             // check if this is the first node
@@ -29,10 +29,7 @@ void remove_inter ( linked_l* list , intersection* inter )
         else
             last = i ;
 
-
-
         i = last ? last -> next : 0  ;
-
     }
 }
 
@@ -54,7 +51,7 @@ int list_contains ( linked_l* list , object *o )
 {
     // search for the intersection in the list, linear search is more than enough for our purposes
     for ( node* i = list->start ; i ; i=i->next )
-        if ( i->i->obj.id == o->id )
+        if ( i->i->obj->id == o->id )
             return 1 ;
     return 0;
 }
