@@ -12,7 +12,8 @@ then `make`
 - clean API
 - optimizations:
     - cube-ray intersection
-    - children are copied around too much
+    - pre-compute the tranforms for children of groups
+    - AABB optimization
     
 - shapes to add
     - cones
@@ -61,5 +62,11 @@ added support for cubes
 <img src="screenshots/eoc12.png"/>
 
 ### end of chapter 13
+added support for cylinders 
 
 <img src="screenshots/eoc13_1.png"/>
+
+### end of chapter 14
+added groups
+
+<img src ="screenshots/eoc_14.png"/>
