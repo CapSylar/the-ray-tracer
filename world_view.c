@@ -54,25 +54,6 @@ void destroy_world ( world *dead )
     dead->obj_count = 0;
 }
 
-/*void add_obj_world ( world* w , object* new_obj )  //TODO: change the way the children are stored
-{
-    w->obj_count++ ;
-    w->children = realloc(w->children , sizeof(shape_s) * w->obj_count ) ;
-    // copy the object into its new place
-    w->children[w->obj_count - 1].child = new_obj ;
-    w->children[w->obj_count - 1].type = OBJECT;
-}
-
-void add_grp_world ( world *w , group* new_grp )
-{
-    w->obj_count++ ;
-    w->children = realloc(w->children , sizeof(shape_s) * w->obj_count ) ;
-    // copy the object into its new place
-    w->children[w->obj_count - 1].child = new_grp ;
-    w->children[w->obj_count - 1].type = GROUP ;
-
-}*/
-
 void add_to_world( world* w , void* new_grp , enum child_type type )
 {
     w->children = realloc(w->children , sizeof(shape_s) * (w->obj_count + 1) ) ;
@@ -84,46 +65,20 @@ void inter_ray_world ( ray* r , world* w , inter_collec *dest )
 {
     // iterate over all the object in the world and intersect them
     // clear dest array to avoid problems
-    *dest = ( inter_collec ) {0} ;
 
     for ( int i = 0 ; i < w->obj_count ; ++i )
     {
-        inter_collec temp ;
         shape_s child = w->children[i];
 
         if ( child.type == GROUP )
-            inter_ray_group( r , child.child , &temp ) ;
+            inter_ray_group( r , child.child , dest ) ;
         else
-            intersect(r , child.child , &temp ) ;
-
-        merge_destroy( dest , &temp ) ;
+            intersect(r , child.child , dest ) ;
 
     }
 
     // sort the list before returning
-    qsort( dest->xs , dest->count , sizeof(intersection) , comp_intersections ) ; // TODO: problem here
-}
-
-void merge_destroy ( inter_collec *dest , inter_collec *inter )
-{
-    // merge the intersection collection to dest and then destroy it
-    if ( !inter->count )
-    {
-        if ( inter->xs ) // sometimes we allocate even though the size may be zero
-            free(inter->xs);
-        return;
-    }
-
-    dest-> xs = realloc( dest->xs , (dest->count + inter->count) * sizeof( intersection )) ;
-    if ( dest->xs == 0 )
-        fprintf( stderr , "failed to realloc\n") ;
-    // copy the intersections to the destination
-
-    for ( int i = 0 ; i < inter->count ; ++i ) // TODO: use memove here
-        dest->xs[dest->count + i] = inter->xs[i] ;
-
-    dest->count += inter->count ;
-    free ( inter->xs ) ;
+    qsort( dest->xs , dest->count , sizeof(intersection) , comp_intersections ) ;
 }
 
 void compute_contact ( ray* r , intersection* i , contact_calc* dest, inter_collec* collec ) // computers contract information used for shading and such
@@ -135,11 +90,6 @@ void compute_contact ( ray* r , intersection* i , contact_calc* dest, inter_coll
 
     dest->p_contact = ray_pos(r, dest->t);
     dest->normal = normal_at(dest->obj, &dest->p_contact);
-
-    if ( dest->normal.x != dest->normal.x )
-    {
-        int hello = 0;
-    }
 
     dest->inside = dot_tuples(&dest->normal, &dest->eye_v) < 0 ? 1 : 0;
 
@@ -217,40 +167,30 @@ tuple shade_hit( world* w , contact_calc * calc , int calc_shadows , int depth_l
     reflected = add_tuples( &surface , &reflected );
     tuple final = add_tuples( &refracted , &reflected ) ;
 
-    if ( final.x != final.x || final.y != final.y || final.z != final.z )
-    {
-        int hello = 0;
-    }
-
     return final;
 }
 
 tuple color_at ( world *w , ray *r , int calc_shadows , int depth_limit )
 {
-    inter_collec interCollec ;
+    inter_collec inter_collec;
+    init_list(&inter_collec);
+
     intersection *inter ;
-    inter_ray_world( r , w , &interCollec );
-    if ( (inter = hit( &interCollec )) ) // if there is an intersection
+
+    inter_ray_world( r , w , &inter_collec );
+    if ( (inter = hit( &inter_collec )) ) // if there is an intersection
     {
         // we have a hit, compute the parameters then shade
         contact_calc calculations ;
-        compute_contact( r , inter , &calculations , &interCollec ) ;
-        destroy_coll( &interCollec ) ;
+        compute_contact( r , inter , &calculations , &inter_collec ) ;
+        destroy_list(&inter_collec);
         return shade_hit( w , &calculations , calc_shadows , depth_limit ) ;
     }
 
-    // free the intersection collection
-
-    destroy_coll( &interCollec ) ;
-    return get_color( 0 , 0 , 0 ) ; // black
+    destroy_list(&inter_collec);
+    return get_clear_color() ;
 }
-/**
- * creates the view transform for the camera
- * @param to
- * @param from
- * @param up
- * @param res
- */
+
 void view_transform ( tuple* to , tuple* from , tuple* up , mat4 res )
 {
     // calculate forward vector
@@ -325,15 +265,12 @@ void ray_for_pixel ( camera* c , int px , int py , ray *r )
     float world_x = c->half_width - x_offset ;
     float world_y = c->half_height - y_offset ;
 
-    mat4 reverse ;
-
-    gluInvertMatrix( c->transform , reverse ) ;
     tuple pixel ;
     tuple end = get_point (world_x , world_y , -1 ) ;
-    multiply_mat4_tuple( reverse , &end , &pixel );
+    multiply_mat4_tuple( c->inverse , &end , &pixel );
     end = get_point (0,0,0);
     tuple origin ;
-    multiply_mat4_tuple( reverse , &end , &origin ) ;
+    multiply_mat4_tuple( c->inverse , &end , &origin ) ;
 
     tuple direction = sub_tuples( &pixel , &origin ) ;
     normalize_tuple( &direction ) ;
@@ -341,7 +278,7 @@ void ray_for_pixel ( camera* c , int px , int py , ray *r )
     r->org = origin ;
 }
 
-void render( camera *c , world *w )
+/*void render( camera *c , world *w )
 {
     init_canvas(c->h_size,c->v_size) ;
     for ( int y = 0 ; y < c->v_size ; ++y )
@@ -357,7 +294,7 @@ void render( camera *c , world *w )
 
         update_interface();
     }
-}
+}*/
 
 int is_shadowed ( world* w , tuple *point)
 {
@@ -370,13 +307,48 @@ int is_shadowed ( world* w , tuple *point)
     ray god_ray = get_ray( point , &point_to_light ) ;
     // cast the ray into the world
     inter_collec intersections ;
+    init_list( &intersections );
     inter_ray_world( &god_ray , w , &intersections ) ;
     intersection* inter = hit( &intersections ) ;
     int isHit = inter != 0 ;
     float t = isHit ? inter->t : -1  ;
-    destroy_coll( &intersections ) ; // free the collection
+    destroy_list( &intersections ) ; // free the collection
 
     return ( isHit && t < distance) ; // there is an object lying between the point and the light source
+}
+
+void precompute_inv_world( world* w )
+{
+
+    // enter the world and precompute the inverse transform for both groups and children
+    for ( int i = 0 ; i < w->obj_count ; ++i )
+    {
+        precompute_inv_shape( &w->children[i] );
+    }
+}
+
+void precompute_inv_shape( shape_s* child )
+{
+    float *src, *dest;
+
+    if ( child->type == OBJECT )
+    {
+        src = ((object *)(child->child))->trans ;
+        dest = ((object *)(child->child))->inverse_trans;
+    }
+    else
+    {
+        group* x = ((group *)(child->child));
+        src = x->trans ;
+        dest = x->inverse_trans;
+
+        for ( int j = 0 ; j < x->count ; ++j )
+        {
+            precompute_inv_shape( &x->children[j] );
+        }
+    }
+
+    gluInvertMatrix( src , dest );
 }
 
 

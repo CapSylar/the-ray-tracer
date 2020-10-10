@@ -7,6 +7,7 @@
 tuple get_point ( float x , float y , float z ) ;
 tuple get_vector ( float x , float y , float z ) ;
 tuple get_color ( float r , float g , float b ) ;
+tuple get_clear_color () ;
 int compare_tuple ( tuple* tp1 , tuple* tp2 ) ;
 tuple add_tuples ( tuple* tp1 , tuple* tp2 ) ;
 tuple sub_tuples ( tuple* tp1 , tuple* tp2 ) ;// subtract tp2 from tp1

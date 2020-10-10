@@ -16,6 +16,11 @@ tuple get_color ( float r , float g , float b )
     return ( tuple ) { r , g , b , 0 } ; // w component unused
 }
 
+tuple get_clear_color ()
+{
+    return ( tuple ) { /*0.219f , 0.7215f , 0.8196f */ 0,0,0 } ;
+}
+
 int compare_tuple ( tuple* tp1 , tuple* tp2 )
 {
     return ( float_cmp(tp1->x,tp2->x) && float_cmp(tp1->y,tp2->y) &&

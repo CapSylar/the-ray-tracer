@@ -2,6 +2,7 @@
 #define RAY_TRACER_RAY_H
 
 #include "defs.h"
+#include "list.h"
 
 ray get_ray ( tuple* origin , tuple* direction );
 void intersect_sphere ( ray *r , object* s , inter_collec* dest ) ;
@@ -16,8 +17,6 @@ object* get_cylinder() ;
 object* get_cone();
 group* get_group();
 object* get_glass_sphere() ;
-inter_collec intersections( int num , ... ) ;
-void destroy_coll ( inter_collec* col ) ;
 void intersect ( ray* r , object* s , inter_collec* dest ) ;
 intersection* hit( inter_collec* col ) ;
 ray transform_ray ( ray* r , mat4 mat ) ;

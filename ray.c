@@ -30,10 +30,7 @@ tuple ray_pos ( ray* x , float t )
 
 void intersect ( ray* r , object* s , inter_collec* dest )
 {
-    mat4 inver ;
-    gluInvertMatrix( s->trans , inver ) ;
-    ray new_r = transform_ray( r , inver ) ;
-    *dest = ( inter_collec ){0} ; // for sanity
+    ray new_r = transform_ray( r , s->inverse_trans ) ;
 
     // determine what kind of shape we are working with
 
@@ -69,26 +66,18 @@ void intersect_sphere ( ray *r , object* s , inter_collec* dest )
 
     float disc = b*b -4*a*c ;
 
-    if ( disc < 0 ) // no solution
+    if ( disc >= 0 )
     {
-        dest -> count = 0 ;
-    }
-    else
-    {
-        dest -> xs = malloc ( sizeof( intersection ) *  2 ) ;
-        dest -> count = 2;
-        dest -> xs[0].t = ( -b -sqrtf(disc)) / (2*a) ;
-        dest -> xs[0].obj = s ;
-        dest -> xs[1].t = ( -b +sqrtf(disc)) / (2*a) ;
-        dest -> xs[1].obj = s ;
+        intersection inter1 = { .obj = s , .t = ( -b -sqrtf(disc)) / (2*a) };
+        intersection inter2 = { .obj = s , .t = ( -b +sqrtf(disc)) / (2*a) };
+        list_add( dest , inter1 );
+        list_add( dest , inter2 );
     }
 }
 
 void intersect_cylinder ( ray* r , object* s , inter_collec* dest )
 {
     // just a circle and ray intersection
-    dest->count = 0;
-    dest->xs = malloc(sizeof(intersection) * 2); // maximum we will need
 
     float a = r->dir.x*r->dir.x + r->dir.z*r->dir.z ;
 
@@ -116,17 +105,11 @@ void intersect_cylinder ( ray* r , object* s , inter_collec* dest )
         a = r->org.y + r->dir.y * inter1;
 
         if (a < s->max && a > s->min) // gets rendered
-        {
-            dest->xs[0] = (intersection) {inter1, s};
-            dest->count++;
-        }
+            list_add( dest , (intersection) {inter1, s} );
 
         a = r->org.y + r->dir.y * inter2;
         if (a < s->max && a > s->min) // gets rendered
-        {
-            dest->xs[dest->count] = (intersection) {inter2, s};
-            dest->count++;
-        }
+            list_add( dest , (intersection) { inter2 , s  } );
     }
 
     intersect_cyl_caps( r , s , dest ) ;
@@ -134,8 +117,6 @@ void intersect_cylinder ( ray* r , object* s , inter_collec* dest )
 
 void intersect_cone( ray* r , object s , inter_collec* dest )
 {
-    dest->count = 0;
-
     float a = r->dir.x*r->dir.x - r->dir.y*r->dir.y + r->dir.z*r->dir.z ;
     float b = 2*r->org.x*r->dir.x - 2*r->org.y*r->dir.y + 2*r->org.z*r->dir.z ;
     float c = r->org.x*r->org.x - r->org.y*r->org.y + r->org.z*r->org.z ;
@@ -145,14 +126,11 @@ void intersect_plane ( ray *r , object* s , inter_collec* dest  )
 {
     if ( fabsf(r->dir.y) < EPS ) // will *never* intersect the plane
     {
-        dest->count = 0 ;
         return;
     }
 
-    dest->xs = malloc ( sizeof(intersection) ) ;
-    dest->count = 1 ;
-    dest->xs[0].t = -(r->org.y) / r->dir.y ;
-    dest->xs[0].obj = s ;
+    intersection inter1 = { .obj = s , .t = -(r->org.y) / r->dir.y };
+    list_add( dest , inter1 );
 }
 object* get_sphere ()
 {
@@ -168,9 +146,10 @@ object* get_sphere ()
 // just for the lolz
 object* get_glass_sphere()
 {
-    object* sphere = malloc ( sizeof(object) ) ;
+    object* sphere = get_sphere() ;
     sphere->mat.transparency = 1.0f ;
     sphere->mat.refractive_index = 1.5f ;
+    sphere->mat.reflective = 0.9f ;
     sphere->id = rand() ;
 
     return sphere ;
@@ -270,55 +249,44 @@ void add_g_group ( group *father , group *son ) // wrapper
 
 void inter_ray_group ( ray* r , group* grp , inter_collec *dest )
 {
-    mat4 inver;
-    gluInvertMatrix( grp->trans , inver );
-    ray new_r = transform_ray( r , inver );
+    ray new_r = transform_ray( r , grp->inverse_trans );
     // iterate over all the object in the world and intersect them
     // clear dest array to avoid problems
-    *dest = ( inter_collec ) {0} ;
 
     for ( int i = 0 ; i < grp->count ; ++i )
     {
-        inter_collec temp ;
-
         // unpack the child and intersect
-        //TODO: no recursive call for now, so no support for groups inside other groups
 
         if ( grp->children[i].type == GROUP )
-            inter_ray_group( &new_r , grp->children[i].child , &temp );
+            inter_ray_group( &new_r , grp->children[i].child , dest );
         else
-            intersect( &new_r , grp->children[i].child , &temp ) ;
-
-        merge_destroy( dest , &temp ) ;
+            intersect( &new_r , grp->children[i].child , dest ) ;
 
     }
-
-    // sort the list before returning
-    qsort( dest->xs , dest->count , sizeof(intersection) , comp_intersections ) ;
 }
 
 tuple world_to_object ( void* child , enum child_type type , tuple point )
 {
     // transform a point from world space to object space taking into account the "groups" in between
-    float* mat;
+    float* mat; //TODO: refactor
 
     if ( type == OBJECT )
     {
         if (((object* ) child)->parent)
             point = world_to_object(((object *) child)->parent, GROUP, point);
-        mat = ((object *) child)->trans;
+        //mat = ((object *) child)->trans;
+        mat = ((object *) child)->inverse_trans;
     }
     else if ( type == GROUP )
     {
         if (((group*) child)->parent)
             point = world_to_object(((group *) child)->parent, GROUP, point);
-        mat = ((group *) child)->trans;
+        mat = ((group *) child)->inverse_trans;
     }
 
-    mat4 inver;
     tuple res;
-    gluInvertMatrix( mat , inver );
-    multiply_mat4_tuple( inver , &point , &res ) ;
+
+    multiply_mat4_tuple( mat , &point , &res ) ;
 
     return res;
 }
@@ -331,20 +299,20 @@ tuple normal_to_world ( void *child , enum child_type type , tuple normal )
 
     if ( type == OBJECT )
     {
-        mat = ((object *) child)->trans;
+        mat = ((object *) child)->inverse_trans;
         parent = ((object *) child) ->parent ;
     }
 
     else
     {
-        mat = ((group *) child)->trans;
+        mat = ((group *) child)->inverse_trans;
         parent = ((group *) child) ->parent ;
     }
 
-    mat4 inverse , transposed ;
+    mat4 transposed ;
     tuple new_normal;
-    gluInvertMatrix( mat , inverse );
-    transpose_mat4( inverse , transposed );
+
+    transpose_mat4( mat , transposed );
     multiply_mat4_tuple( transposed , &normal , &new_normal );
     new_normal.w = 0 ;
     normalize_tuple( &new_normal );
@@ -368,34 +336,6 @@ int comp_intersections (const void* elem1 , const void* elem2 )
         return -1 ;
     else
         return 0 ;
-}
-
-/*inter_collec intersections( int num , ... )
-{
-    inter_collec col = { num , 0 } ;
-    col.xs = malloc ( sizeof(intersection) * num ) ;
-    va_list ap;
-
-    va_start(ap, num);
-
-    for ( int i = 0 ; i < num ; ++i )
-    {
-        col.xs[i] = *( va_arg(ap, intersection * )) ;
-    }
-
-    // traverse rest of the arguments to find out minimum
-    va_end(ap);
-
-    //sort the list according to the t value
-    qsort( col.xs , num , sizeof(intersection) , comp_intersections ) ;
-    return col;
-}*/
-
-void destroy_coll ( inter_collec* col )
-{
-    col->count = 0 ;
-    if ( col->xs )
-        free(col->xs) ;
 }
 
 intersection* hit( inter_collec* col )
@@ -432,26 +372,12 @@ void set_transform ( object *o , mat4 trans )
 tuple normal_at (object *s , tuple *world_p )
 {
     // first revert the point to object coordinates
-    tuple local ; /*, ret ;
-    mat4 inv ;
-    gluInvertMatrix( s->trans , inv ) ;
-    multiply_mat4_tuple( inv , world_p , &local ) ;
-    // calculate the local normal for the shape
-    local = local_normal ( s , &local ) ;
-
-    // convert the normal back to world coordinates by multiplying with transpose of the inverse
-    mat4 final ;
-    transpose_mat4( inv , final ) ;
-    multiply_mat4_tuple( final , &local , &ret  ) ;
-    ret.w = 0 ; // hack again, convert to vector
-    normalize_tuple( &ret );*/
+    tuple local ;
 
     local = world_to_object( s , OBJECT , *world_p );
     local = local_normal( s , &local );
 
     return normal_to_world( s, OBJECT , local );
-
-    //return ret;
 }
 tuple local_normal ( object* s , tuple* local_p )
 {
@@ -697,14 +623,17 @@ void intersect_cube ( ray* god_ray , object* cube , inter_collec *collec )
 
     if ( xmin > xmax ) // ray missed the cube
     {
-        collec->count = 0 ;
+//        collec->count = 0 ;
     }
     else
     {
-        collec->count = 2 ;
-        collec->xs = malloc ( sizeof(intersection) * 2 ) ;
-        collec->xs[0] = ( intersection ) { xmin , cube } ;
-        collec->xs[1] = ( intersection ) { xmax , cube } ;
+        list_add( collec , (intersection) { .obj = cube , .t = xmin } );
+        list_add ( collec , (intersection ) { .obj = cube , .t = xmax } );
+
+//        collec->count = 2 ;
+//        collec->xs = malloc ( sizeof(intersection) * 2 ) ;
+//        collec->xs[0] = ( intersection ) { xmin , cube } ;
+//        collec->xs[1] = ( intersection ) { xmax , cube } ;
     }
 }
 
@@ -744,13 +673,16 @@ void intersect_cyl_caps( ray* r , object* cylinder , inter_collec* collec )
     // check intersection with the bottom cap
     float tb = (cylinder->min - r->org.y) / r->dir.y ;
     if ( check_cyl_caps(r,tb) )
-        collec->xs[collec->count++] = ( intersection ){ tb , cylinder } ;
+    {
+        list_add( collec , (intersection ){ .obj = cylinder , .t = tb } );
+    }
 
     // check intersection with the upper cap
     float tu = (cylinder->max - r->org.y) / r->dir.y ;
     if ( check_cyl_caps(r,tu))
-        collec->xs[collec->count++] = ( intersection ) { tu , cylinder } ;
-
+    {
+        list_add( collec , (intersection){ .obj = cylinder , .t = tu } );
+    }
 }
 
 

@@ -76,6 +76,7 @@ typedef struct object
     int id ;
     int type;
     mat4 trans;
+    mat4 inverse_trans ; // testing
     material mat;
 
     // ugly booger
@@ -99,6 +100,7 @@ typedef struct group
     int count;
 
     mat4 trans;
+    mat4 inverse_trans;
 
 } group;
 
@@ -108,13 +110,6 @@ typedef struct
     object* obj;
 
 } intersection ;
-
-typedef struct
-{
-    int count ;
-    intersection *xs ;
-
-} inter_collec ;
 
 typedef struct
 {
@@ -151,6 +146,7 @@ typedef struct
     float half_height ;
 
     mat4 transform ;
+    mat4 inverse;
 
 } camera ;
 
